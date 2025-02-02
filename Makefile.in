@@ -1,13 +1,16 @@
 ###
 ### Makefile.in
 ###
-### $Id: Makefile.in,v 1.6 1999/05/25 02:07:22 ashvin Exp ashvin $
+### $Id: Makefile.in,v 1.7 1999/08/19 16:14:56 ashvin Exp $
 ###
 ### Copyright (C) 1996 by Ashvin Goel
 ###
 ### This file is under the Gnu Public License.
 
 # $Log: Makefile.in,v $
+# Revision 1.7  1999/08/19 16:14:56  ashvin
+# Minor fixes
+#
 # Revision 1.6  1999/05/25 02:07:22  ashvin
 # Renamed encrypt to mailcrypt.
 # Added records.info file.

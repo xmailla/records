@@ -1,7 +1,7 @@
 ;;;
 ;;; records.el
 ;;;
-;;; $Id: records.el,v 1.25 1999/07/17 02:17:16 ashvin Exp $
+;;; $Id: records.el,v 1.27 1999/08/01 02:36:14 ashvin Exp $
 ;;;
 ;;; Copyright (C) 1996 by Ashvin Goel
 ;;;
@@ -16,7 +16,7 @@
 ;;; Internal variables - users shouldn't change
 ;;; The defvar is for internal documentation.
 ;;;
-(defconst records-version "1.4.2")
+(defconst records-version "1.4.3")
 
 (defvar records-mode-menu-map nil
   "Records Menu Map. Internal variable.")
@@ -431,7 +431,11 @@ ring."
     (insert "* " subject "\n")
     (insert-char ?- (+ (length subject) 2))
     (insert (concat "\n" (records-make-link subject date tag) "\n"))
-    (records-add-text-properties opoint (point))
+    (if running-xemacs
+        (records-add-text-properties opoint (point))
+      ;; emacs has an of-by-one error
+        (records-add-text-properties opoint (1- (point)))
+        )
     (if record-body
 	(insert record-body))))
 
