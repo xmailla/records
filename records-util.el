@@ -1,7 +1,7 @@
 ;;;
 ;;; records-util.el
 ;;;
-;;; $Id: records-util.el,v 1.8 1999/11/23 06:22:24 ashvin Exp $
+;;; $Id: records-util.el,v 1.8 1999/11/23 06:22:24 ashvin Exp ashvin $
 ;;;
 ;;; Copyright (C) 1996 by Ashvin Goel
 ;;;
@@ -101,18 +101,17 @@ Records encryption requires the mailcrypt and mc-pgp packages."
       (load "mc-pgp"))
   (save-excursion
     (let ((point-pair (records-record-region t))
-          start)
+          start end)
       (if arg (setq start (point))
         (setq start (first point-pair)))
+      (setq end (second point-pair))
       (goto-char start)
       ;; sanity check
       (if (or (looking-at mc-pgp-msg-begin-line)
 	      (looking-at mc-pgp-signed-begin-line))
 	  (error "records-encrypt-record: record is already encrypted."))
       (mc-pgp-encrypt-region (list (records-user-name)) 
-                             start 
-                             (second point-pair)
-                             (records-user-name) nil))))
+                             start end (records-user-name) nil))))
 
 (defun records-decrypt-record ()
   "Decrypt the current record.

@@ -1,7 +1,7 @@
 ;;;
 ;;; records.el
 ;;;
-;;; $Id: records.el,v 1.30 1999/11/23 19:51:18 ashvin Exp $
+;;; $Id: records.el,v 1.30 1999/11/23 19:51:18 ashvin Exp ashvin $
 ;;;
 ;;; Copyright (C) 1996 by Ashvin Goel
 ;;;
@@ -11,12 +11,13 @@
 (require 'records-index)
 (require 'records-dindex)
 (require 'records-util)
+(require 'records-search)
 
 ;;;
 ;;; Internal variables - users shouldn't change
 ;;; The defvar is for internal documentation.
 ;;;
-(defconst records-version "1.4.5")
+(defconst records-version "1.4.6")
 
 (defvar records-mode-menu-map nil
   "Records Menu Map. Internal variable.")
@@ -228,7 +229,7 @@ The ndate is normalized and in (day month year) format."
 	(date (make-string records-date-length ? )))
     (if (= records-year-length 2)
 	;; convert to 2 digit year
-	(if (> (nth 2 cdate) 90)
+	(if (< (nth 2 cdate) 2000)
 	    (setcar (nthcdr 2 cdate) (- (nth 2 cdate) 1900))
 	  (setcar (nthcdr 2 cdate) (- (nth 2 cdate) 2000))))
     ;; now denormalize
@@ -321,9 +322,12 @@ records-encrypt-record and records-decrypt-record. What we need is that
 insertion of any character automatically inserts a newline also. TODO"
   (if records-fontify
       (progn
-	(add-text-properties beg end '(face bold start-open t))
-	(if records-subject-read-only
-	    (add-text-properties beg end '(read-only records-subject))))))
+        (if (not running-xemacs)
+            ;; emacs has an of-by-one error
+            (setq end (1- end)))
+        (add-text-properties beg end '(face bold start-open t))
+        (if records-subject-read-only
+            (add-text-properties beg end '(read-only records-subject))))))
 
 (defun records-remove-text-properties (s) 
   "Remove the text properties of string in a record.
@@ -460,11 +464,7 @@ ring."
     (insert "* " subject "\n")
     (insert-char ?- (+ (length subject) 2))
     (insert (concat "\n" (records-make-link subject date tag) "\n"))
-    (if running-xemacs
-        (records-add-text-properties opoint (point))
-      ;; emacs has an of-by-one error
-        (records-add-text-properties opoint (1- (point)))
-        )
+    (records-add-text-properties opoint (point))
     (if record-body
 	(insert record-body))))
 
@@ -883,7 +883,7 @@ The key-bindings of this mode are:
 
   (define-key records-mode-map "\C-c\C-i" 'records-insert-record)
   (define-key records-mode-map "\C-c\C-d" 'records-delete-record)
-  (define-key records-mode-map "\C-c\C-r" 'records-rename-record)
+  (define-key records-mode-map "\C-c\C-e" 'records-rename-record)
   (define-key records-mode-map "\C-c\C-m" 'records-move-record)
 
   (define-key records-mode-map "\M-\C-a" 'records-goto-up-record)
@@ -892,28 +892,30 @@ The key-bindings of this mode are:
   (define-key records-mode-map "\C-c\C-p" 'records-goto-prev-record)
   (define-key records-mode-map "\C-c\C-n" 'records-goto-next-record)
 
-  (define-key records-mode-map "\C-c\C-y" 'records-goto-prev-day); yesterday
-  (define-key records-mode-map "\C-c\C-t" 'records-goto-next-day); tomorrow
   (define-key records-mode-map "\C-c\C-b" 'records-goto-prev-record-file)
                                         ; back file
   (define-key records-mode-map "\C-c\C-f" 'records-goto-next-record-file) 
                                         ; front file
 
+  (define-key records-mode-map "\C-c\C-y" 'records-goto-prev-day); yesterday
+  (define-key records-mode-map "\C-c\C-t" 'records-goto-next-day); tomorrow
+
   (define-key records-mode-map "\C-c\C-g" 'records-goto-link)
   (define-key records-mode-map "\C-c\C-l" 'records-goto-last-record)
   (define-key records-mode-map "\C-c\C-j" 'records-goto-index); jump!!
 
+  (define-key records-mode-map "\C-c\C-s" 'records-search-forward)
+  (define-key records-mode-map "\C-c\C-r" 'records-search-backward)
+
   ;; (define-key records-mode-map [M-S-mouse-1] 'records-goto-mouse-link)
 
   ;; utility functions have C-c/ prefix keys
-  (define-key records-mode-map "\C-c/e" 'records-encrypt-record)
-  (define-key records-mode-map "\C-c/d" 'records-decrypt-record)
-
   (define-key records-mode-map "\C-c/t" 'records-create-todo)
   (define-key records-mode-map "\C-c/g" 'records-get-todo)
+  (define-key records-mode-map "\C-c/e" 'records-encrypt-record)
+  (define-key records-mode-map "\C-c/d" 'records-decrypt-record)
   (define-key records-mode-map "\C-c/c" 'records-concatenate-records)
   (define-key records-mode-map "\C-c/f" 'records-concatenate-record-files)
-
 
   (define-key records-mode-map "\C-c\C-c" 'records-goto-calendar)
   (define-key records-mode-map "\C-c\C-k" 'records-link-as-kill)
@@ -925,6 +927,11 @@ The key-bindings of this mode are:
       ()
     (setq records-mode-menu-map
 	  '(["Today's Record" records-goto-today t]
+	    "--"
+	    ["Insert Record" records-insert-record t]
+	    ["Delete Record" records-delete-record t]
+	    ["Rename Record" records-rename-record t]
+	    ["Move Record" records-move-record t]
 	    "--"
 	    ["Up Record" records-goto-up-record t]
 	    ["Down Record" records-goto-down-record t]
@@ -942,10 +949,8 @@ The key-bindings of this mode are:
 	    ["Goto Last Record" records-goto-last-record t]
 	    ["Goto Index" records-goto-index t]
 	    "--"
-	    ["Insert Record" records-insert-record t]
-	    ["Delete Record" records-delete-record t]
-	    ["Rename Record" records-rename-record t]
-	    ["Move Record" records-move-record t]
+            ["Search Forward" records-search-forward t]
+            ["Search Backward" records-search-backward t]
 	    "--"
 	    ["Create TODO" records-create-todo t]
 	    ["Get TODO's" records-get-todo t]

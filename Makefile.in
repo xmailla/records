@@ -1,7 +1,7 @@
 ###
 ### Makefile.in
 ###
-### $Id: Makefile.in,v 1.8 1999/11/13 22:58:17 ashvin Exp $
+### $Id: Makefile.in,v 1.8 1999/11/13 22:58:17 ashvin Exp ashvin $
 ###
 ### Copyright (C) 1996 by Ashvin Goel
 ###
@@ -46,8 +46,8 @@ TAR=tar
 srcdir = @srcdir@
 VPATH = @srcdir@
 
-SOURCES = records-vars.el records-dindex.el records-index.el records-util.el records.el
-OBJECTS = records-vars.elc records-dindex.elc records-index.elc records-util.elc records.elc
+SOURCES = records-vars.el records-dindex.el records-index.el records-util.el records-search.el records.el
+OBJECTS = records-vars.elc records-dindex.elc records-index.elc records-util.elc records-search.elc records.elc
 
 PRELOADS = -l records-load.el -l records-vars.el -l records.el
 EFLAGS =-batch -q -no-site-file $(PRELOADS)

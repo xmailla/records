@@ -1,3 +1,11 @@
+Version 1.4.6
+        Fixed a Y2K bug when years were specified in 2 digits!
+        Added functionality so that records of the same subject can be 
+          searched across records files. Thanks to Kaarthik Sivakumar.
+        Fixed fontification bug for emacs so that the first character after
+          the record subject is not read-only. This fixes an
+          encryption/decryption bug in emacs also.
+
 Version 1.4.5
         configure now takes an argument so that xemacs can be specified
           for byte compiling the elisp files.

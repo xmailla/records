@@ -364,6 +364,15 @@ Records allows traversing records within a record file and across files.
      Key `C-c C-l'. Go back to the last record file visited. Identical
      record files are not put in the history consecutively.
 
+`records-search-forward'
+     Key `C-c C-s'. Search forward for regular expression in current
+     subject across record files.
+
+`records-search-backward'
+     Key `C-c C-r'. Search backward for regular expression in current
+     subject across record files. Note: this key binding belonged to
+     records-rename-record before version 1.4.6.
+
 
 File: records.info,  Node: Records Index File,  Next: Manipulating Records,  Prev: Record Traversal,  Up: Basic Use
 
@@ -402,8 +411,9 @@ Adding, Deleting and Renaming Records
      this record makes the file empty, the records file is deleted.
 
 `records-rename-record'
-     Key `C-c C-r'. Renames the subject of the current record for the
-     current date.
+     Key `C-c C-e'. Renames the subject of the current record for the
+     current date. Note: the key binding for this command has been
+     changed in version 1.4.6.
 
 `records-move-record'
      Key `C-c C-m'. Moves the current record to another date. It prompts
@@ -749,6 +759,8 @@ Concept and Function Index
 * records-mark-record:                   Misc Commands.
 * records-move-record:                   Manipulating Records.
 * records-rename-record:                 Manipulating Records.
+* records-search-backward:               Record Traversal.
+* records-search-forward:                Record Traversal.
 * records-underline-line:                Misc Commands.
 * TODO:                                  Organizing your TODOs.
 * Tutorial:                              Tutorial.
@@ -770,6 +782,7 @@ Key Index
 * C-c C-b:                               Record Traversal.
 * C-c C-c:                               Misc Commands.
 * C-c C-d:                               Manipulating Records.
+* C-c C-e:                               Manipulating Records.
 * C-c C-f:                               Record Traversal.
 * C-c C-g:                               Record Traversal.
 * C-c C-i:                               Manipulating Records.
@@ -779,7 +792,8 @@ Key Index
 * C-c C-m:                               Manipulating Records.
 * C-c C-n:                               Record Traversal.
 * C-c C-p:                               Record Traversal.
-* C-c C-r:                               Manipulating Records.
+* C-c C-r:                               Record Traversal.
+* C-c C-s:                               Record Traversal.
 * C-c C-t:                               Record Traversal.
 * C-c C-y:                               Record Traversal.
 * C-c n:                                 Record Traversal.
@@ -799,17 +813,17 @@ Node: Basic Use9841
 Node: What is a Record10436
 Node: Record File11659
 Node: Record Traversal12013
-Node: Records Index File15124
-Node: Manipulating Records15973
-Node: Misc Commands17016
-Node: Records Administration18601
-Node: Advanced Use19614
-Node: Organizing your TODOs19996
-Node: Security22838
-Node: Concatenating Records24345
-Node: Conclusion26891
-Node: Variable Index28225
-Node: Concept Index29435
-Node: Key Index31579
+Node: Records Index File15468
+Node: Manipulating Records16317
+Node: Misc Commands17439
+Node: Records Administration19024
+Node: Advanced Use20037
+Node: Organizing your TODOs20419
+Node: Security23261
+Node: Concatenating Records24768
+Node: Conclusion27314
+Node: Variable Index28648
+Node: Concept Index29858
+Node: Key Index32120
 
 End Tag Table
