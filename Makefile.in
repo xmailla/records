@@ -1,7 +1,7 @@
 ###
 ### Makefile.in
 ###
-### $Id: Makefile.in,v 1.6 1999/05/25 02:07:22 ashvin Exp $
+### $Id: Makefile.in,v 1.6 1999/05/25 02:07:22 ashvin Exp ashvin $
 ###
 ### Copyright (C) 1996 by Ashvin Goel
 ###
@@ -73,7 +73,7 @@ OBJECTS = records-vars.elc records-dindex.elc records-index.elc records-util.elc
 PRELOADS = -l records-load.el -l records-vars.el -l records.el
 EFLAGS =-batch -q -no-site-file $(PRELOADS)
 
-DISTFILES = $(SOURCES) FAQ INSTALL Makefile.in \
+DISTFILES = $(SOURCES) FAQ INSTALL Makefile.in NEWS \
 	README configure configure.in install-sh \
 	mkinstalldirs recordsadmin.in records-load.el \
 	records.info records.ps \
@@ -129,7 +129,7 @@ records.dvi: records.texi
 ps: records.ps
 
 records.ps: records.dvi
-	$(DVIPS) $(srcdir)/records.dvi
+	$(DVIPS) $(srcdir)/records.dvi -o
 
 TAGS: $(SOURCES)
 	cd $(srcdir) && etags $(SOURCES)

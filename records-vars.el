@@ -1,7 +1,7 @@
 ;;;
 ;;; records-vars.el
 ;;;
-;;; $Id: records-vars.el,v 1.5 1999/04/14 17:16:51 ashvin Exp $
+;;; $Id: records-vars.el,v 1.6 1999/05/28 04:49:02 ashvin Exp $
 ;;;
 ;;; Copyright (C) 1996 by Ashvin Goel
 ;;;
@@ -73,25 +73,28 @@ The default face is copied from 'bold.")
 
 ;; todo variables
 (defvar	records-todo-prev-day nil
-  "* If t, records-todo is invoked for a new file from records-goto-prev-day.
+  "* If t, records-get-todo is invoked for a new file from records-goto-prev-day.
 A file is new if it does not have any records in it.
-If nil, records-todo is not invoked.
-If not nil and not t, user is asked whether records-todo should be invoked.")
+If nil, records-get-todo is not invoked.
+If not nil and not t, user is asked whether records-get-todo should be invoked.")
 (defvar	records-todo-next-day nil
-  "* If t, records-todo is invoked for a new file from records-goto-next-day.
-If nil, records-todo is not invoked.
-If not nil and not t, user is asked whether records-todo should be invoked.")
+  "* If t, records-get-todo is invoked for a new file from records-goto-next-day.
+If nil, records-get-todo is not invoked.
+If not nil and not t, user is asked whether records-get-todo should be invoked.")
 (defvar	records-todo-today t
-  "* If t, records-todo is invoked for a new file from records-goto-today.
-If nil, records-todo is not invoked.
-If not nil and not t, user is asked whether records-todo should be invoked.")
+  "* If t, records-get-todo is invoked for a new file from records-goto-today.
+If nil, records-get-todo is not invoked.
+If not nil and not t, user is asked whether records-get-todo should be invoked.")
 
-(defvar	records-todo-begin-copy-regexp "^CTODO: "
-  "* The beginning of the copy todo is recognized by this regexp.")
-(defvar	records-todo-begin-move-regexp "^TODO: "
-  "* The beginning of the move todo is recognized by this regexp.")
-(defvar	records-todo-end-regexp "^\n\n"
-  "* The end of both the copy and move todo is recognized by this regexp.")
+(defvar	records-todo-begin-copy-regexp "CTODO: "
+  "* The beginning of the copy todo is recognized by this variable. 
+NOTE: this variable will be recognized at the beginning of a line.")
+(defvar	records-todo-begin-move-regexp "TODO: "
+  "* The beginning of the move todo is recognized by this variable.
+NOTE: this variable will be recognized at the beginning of a line.")
+(defvar	records-todo-end-regexp "END_TODO"
+  "* The end of both the copy and move todo is recognized by this variable.
+NOTE: this variable will be recognized at the beginning of a line.")
 
 (defvar	records-todo-delete-empty-record t
   "* If t, delete record if it is empty after a todo move.

@@ -1,13 +1,26 @@
 ;;;
 ;;; records-util.el
 ;;;
-;;; $Id: records-util.el,v 1.5 1999/04/14 17:16:51 ashvin Exp $
+;;; $Id: records-util.el,v 1.6 1999/05/28 04:48:17 ashvin Exp $
 ;;;
 ;;; Copyright (C) 1996 by Ashvin Goel
 ;;;
 ;;; This file is under the Gnu Public License.
 
-(defun records-todo (&optional date)
+(defun records-create-todo ()
+  "Create a records todo entry in the current record"
+  (interactive)
+  (save-excursion ;; make sure that we are on a subject
+    (records-goto-subject))
+  (if (not (bolp))
+      (insert "\n"))
+  (let (cur-point)
+    (insert records-todo-begin-move-regexp "// created on " (records-todays-date) "\n")
+    (setq cur-point (point))
+    (insert "\n" records-todo-end-regexp)
+    (goto-char cur-point)))
+
+(defun records-get-todo (&optional date)
   "Insert the previous record files todo's into the date file.
 See the records-todo-.*day variables on when it is automatically invoked."
   (interactive)
@@ -34,7 +47,8 @@ See the records-todo-.*day variables on when it is automatically invoked."
 	      (setq bt-point (match-beginning 0))
 	      (setq move (match-beginning 2))
 	      ;; goto end of todo
-	      (if (re-search-forward records-todo-end-regexp eon-point 'end)
+	      (if (re-search-forward (concat "^" records-todo-end-regexp ".*\n") 
+                                     eon-point 'end)
 		  (setq et-point (match-end 0))
 		(setq et-point (point)))
 	      ;; for move, save the regions in the old file

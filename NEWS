@@ -1,0 +1,12 @@
+Version 1.4
+        New function records-create-todo for creating new todos.
+        The default values of records-todo-begin-move-regexp, 
+           records-todo-begin-copy-regexp and records-todo-end-regexp has been changed 
+           and made more sane.
+        The info file has minor updates.
+        Added the NEWS file!
+
+Version 1.3
+        Records now has an info file available.
+        Bug fixes in encryption and decryption of records.
+

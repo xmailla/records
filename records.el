@@ -1,7 +1,7 @@
 ;;;
 ;;; records.el
 ;;;
-;;; $Id: records.el,v 1.21 1999/05/25 02:06:33 ashvin Exp $
+;;; $Id: records.el,v 1.23 1999/05/28 04:50:37 ashvin Exp $
 ;;;
 ;;; Copyright (C) 1996 by Ashvin Goel
 ;;;
@@ -16,7 +16,7 @@
 ;;; Internal variables - users shouldn't change
 ;;; The defvar is for internal documentation.
 ;;;
-(defconst records-version "1.3")
+(defconst records-version "1.4")
 
 (defvar records-mode-menu-map nil
   "Records Menu Map. Internal variable.")
@@ -105,7 +105,7 @@ like records-date, records-date-length, etc."
 	(concat records-date-regexp "\\(\\|" records-tag-regexp "\\)\\s-"))
 
   (setq records-todo-begin-regexp
-	(concat "\\(" records-todo-begin-copy-regexp "\\)\\|\\("
+	(concat "\\(^" records-todo-begin-copy-regexp "\\)\\|\\(^"
 		records-todo-begin-move-regexp "\\)"))
   ;; do some cleaning up
   (if (and (boundp 'records-dindex-buffer) 
@@ -529,8 +529,8 @@ If no-hist is t, then don't add this link to the records-history list.
 If no-switch is t, then do not switch to the new records buffer.
 Instead, the buffer is made ready for editing (via set-buffer).
 If no-switch is 'other, then switch to the new records buffer in another 
-window. If todo is t, then invoke records-todo when a record-less file is 
-being visited. If todo is not nil and not t, ask user whether records-todo 
+window. If todo is t, then invoke records-get-todo when a record-less file is 
+being visited. If todo is not nil and not t, ask user whether records-get-todo 
 should be called. If no-error is t, do not signal error, if the record is 
 not found. If dir is specified, then the file is assumed to be \"dir/date\"."
   (if (null dir)
@@ -549,8 +549,8 @@ not found. If dir is specified, then the file is assumed to be \"dir/date\"."
     ;; handler for new records files
     (if (and todo (null (save-excursion (records-dindex-goto-date date t))))
 	(if (or (eq todo t) 
-		(y-or-n-p "Invoke records-todo (default n): "))
-	    (records-todo date)))
+		(y-or-n-p "Invoke records-get-todo (default n): "))
+	    (records-get-todo date)))
 
     (if (null subject)
 	;; this is for going to a specific day and not a record
@@ -605,7 +605,7 @@ If on-next is t, then don't move if we are at the beginning of a subject."
     ))
 
 ;;;###autoload
-(defun records-goto-index(&optional arg subject date tag no-error)
+(defun records-goto-index (&optional arg subject date tag no-error)
   "If arg is nil or zero, goto the index on date and tag.
 With positive arg, go to the index arg-times next to date and tag.
 With negative arg, go to the index arg-times previous to date and tag.
@@ -620,7 +620,7 @@ Returns the new (date, tag) if found."
   (if (records-index-goto-subject subject (interactive-p) no-error)
       (records-index-goto-relative-date-tag arg date tag)))
   
-(defun records-goto-relative-day(&optional arg no-switch todo)
+(defun records-goto-relative-day (&optional arg no-switch todo)
   "With positive arg, go arg days ahead of current record's date. 
 With negative arg, go arg days behind current record's date.
 The no-switch and todo arguments are passed to records-goto-record."
@@ -630,7 +630,7 @@ The no-switch and todo arguments are passed to records-goto-record."
 	 (new-date (records-denormalize-date new-ndate)))
     (records-goto-record nil new-date "" nil no-switch todo)))
 
-(defun records-goto-prev-day(&optional arg no-switch)
+(defun records-goto-prev-day (&optional arg no-switch)
   "Go to the records file of the previous day.
 With numeric prefix arg. go that many days back.
 See also records-goto-prev-record-file."
@@ -638,23 +638,25 @@ See also records-goto-prev-record-file."
   (records-goto-relative-day (if arg (- arg) -1) no-switch 
                              records-todo-prev-day))
 
-(defun records-goto-next-day(&optional arg no-switch)
+(defun records-goto-next-day (&optional arg no-switch)
   "Go to the records file of the next day.
 With numeric prefix arg. go that many days forward.
 See also records-goto-next-record-file."
   (interactive "P")
   (records-goto-relative-day (if arg arg 1) no-switch records-todo-next-day))
 
+(defun records-todays-date ()
+  "Get todays date in the file name format"
+  (let ((ndate (nthcdr 3 (decode-time))))
+    (setcdr (nthcdr 2 ndate) nil)
+    ;; denormalize the date to get the file name
+    (records-denormalize-date ndate)))
+
 ;;;###autoload
 (defun records-goto-today ()
   "Go to the records file of today."
   (interactive)
-  (let ((ndate (nthcdr 3 (decode-time)))
-	date)
-    (setcdr (nthcdr 2 ndate) nil)
-    ;; denormalize the date to get the file name
-    (setq date (records-denormalize-date ndate))
-    (records-goto-record nil date "" nil nil records-todo-today)))
+    (records-goto-record nil (records-todays-date) "" nil nil records-todo-today))
 
 (defun records-goto-relative-record-file(&optional arg no-switch no-error)
   "With positive arg, go arg files ahead of current records file. 
@@ -740,7 +742,7 @@ Identical record files are not put in the history consecutively."
     (setq records-history (cdr records-history))
     (apply 'records-goto-record link)))
 
-(defun records-insert-record(&optional subject record-body)
+(defun records-insert-record (&optional subject record-body)
   "Insert a new record for the current date. Asks for the subject."
   (interactive)
   (let* ((subject (if subject
@@ -836,7 +838,8 @@ The key-bindings of this mode are:
   (define-key records-mode-map "\C-c/e" 'records-encrypt-record)
   (define-key records-mode-map "\C-c/d" 'records-decrypt-record)
 
-  (define-key records-mode-map "\C-c/t" 'records-todo)
+  (define-key records-mode-map "\C-c/t" 'records-create-todo)
+  (define-key records-mode-map "\C-c/g" 'records-get-todo)
   (define-key records-mode-map "\C-c/c" 'records-concatenate-records)
   (define-key records-mode-map "\C-c/f" 'records-concatenate-record-files)
 
@@ -872,7 +875,8 @@ The key-bindings of this mode are:
 	    ["Delete Record" records-delete-record t]
 	    ["Rename Record" records-rename-record t]
 	    "--"
-	    ["Get TODO's" records-todo t]
+	    ["Create TODO" records-create-todo t]
+	    ["Get TODO's" records-get-todo t]
 	    ["Decrypt Record" records-decrypt-record t]
 	    ["Encrypt Record" records-encrypt-record t]
 	    ["Concat Records" records-concatenate-records t]

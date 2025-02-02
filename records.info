@@ -1,5 +1,5 @@
 This is Info file records.info, produced by Makeinfo version 1.68 from
-the input file records.texi.
+the input file ./records.texi.
 
 START-INFO-DIR-ENTRY
 *  Records: (records).        Records: personal diary software
@@ -342,14 +342,15 @@ Records allows traversing records within a record file and across files.
      Key `C-c C-g'. Goto the link around point in the records file. A
      link in a records file must be enclosed within `<' and `>'. This
      link can be a records link or a web link such as an http, FTP,
-     gopher link. A records link identifies a record (*note What is a
-     Record::.). This record identifier can be copied to any other
-     record and this function used to jump back to the record
-     associated with the link.  For instance, if you copied this link
-     <../../99/04/042199#* Work> into some other record and then typed
-     `C-c C-g' within the angle brackets, you would be transported to
-     the `Work' record of April 21st, 1999. When the link is a web
-     link, the link is handed off to `browse-url-browser-function'.
+     gopher link. For instance, <http://www.yahoo.com>. A records link
+     identifies a record (*note What is a Record::.). This record
+     identifier can be copied to any other record and this function
+     used to jump back to the record associated with the link.  For
+     instance, if you copied this link <../../99/04/042199#* Work> into
+     some other record and then typed `C-c C-g' within the angle
+     brackets, you would be transported to the `Work' record of April
+     21st, 1999. When the link is a web link, the link is handed off to
+     `browse-url-browser-function'.
 
      Note that C-g can be typed only after sometime has elapsed after
      typing C-c or else the command gets aborted because of the
@@ -476,45 +477,51 @@ Organizing your TODOs
 record. You start by creating a TODO such as the following inside a
 record.
 
+
 * Work
 ------
 link: <../../99/04/042199#* Work>
 
 "
-TODO:
+TODO: // created on 042199
 some cool things to do
 rotten things to do
-
-
+END_TODO
 "
 
-   The piece of text within the double quotes is called a TODO. This
-TODO is written on the 21th of April, 1999. Suppose today is the 22th
-of April, 1999 and you open up a new record file today with
-`records-goto-today'. Then the TODO will be moved to today from the
-previous day. If you didn't create a record file on 22th, but created
-one on the 23th, the TODO would be moved from the 21th to the 23th. In
-general, a TODO for a subject is moved to today from the last time
-(day) you wrote a TODO for the subject. You can explicitly move TODOs
-with the function `records-todo'. The following points are important:
+   For your convenience, the function `records-create-todo' can be used
+to create a new TODO. Key `C-c / t'. This function adds a comment with
+the date when the TODO was created.
 
-  1. There must be a space character after the TODO:" "
-
-  2. There are two newlines after the TODO text.
+   The piece of text within the double quotes is called a TODO. Note
+that the double quotes are not part of the TODO. This TODO is written
+on the 21th of April, 1999. Suppose today is the 22th of April, 1999
+and you open up a new record file today with `records-goto-today'. Then
+the TODO will be moved to today from the previous day. If you didn't
+create a record file on 22th, but created one on the 23th, the TODO
+would be moved from the 21th to the 23th. In general, a TODO for a
+subject is moved to today from the last time (day) you wrote a TODO for
+the subject. You can explicitly move TODOs with the function
+`records-get-todo'. Key `C-c / g'.
 
    The match for a todo happens as follows:
 
-     `records-todo-begin-move-regexp'
+     `^records-todo-begin-move-regexp'
      The todo text
-     `records-todo-end-regexp'
+     `^records-todo-end-regexp.*\n'
 
-   You can change the regexps if you like. Use `C-h v' to examine the
-values of these variables. The reason for the non-intuitive regexp
-values is that records is pretty careful before moving text over. In
-particular, a single newline does not stop the todo matching. This also
-allows multiple TODOs within a record. If you want a todo to be copied
-instead of moved, then use CTODO, instead of TODO. Look at
-`records-todo-begin-copy-regexp'.
+   The default value of records-todo-begin-move-regexp is "TODO: ". The
+default value of records-todo-end-regexp is "END_TODO". The comment
+added by `records-create-todo' is just part of the TODO text and can be
+removed.You can change these regexps if you like. Use `C-h v' to
+examine the values of these variables. You can have also have multiple
+TODOs within a record. If you want a todo to be copied instead of
+moved, then use CTODO, instead of TODO. Look at
+`records-todo-begin-copy-regexp'.  NOTE: the value of
+`records-todo-begin-move-regexp, records-todo-begin-copy-regexp,
+records-todo-end-regexp' has changed after records version 1.3. In fact,
+these variable are no longer regexps. So if you have changed them,
+beware.
 
    The variable `records-todo-today' determines whether
 `records-goto-today' will do TODO processing. If set to true (the
@@ -572,9 +579,9 @@ Putting Records Together
 records are put together and output in a separate emacs buffer.
 Concatenation allows combining your thoughts. For instance, you can
 write a weekly status report of your work by combining your records on
-the `Work' subject for each of the days in the last week. This
-ofcourse, assumes that you write what you do everyday! This assumption
-is the basis for this software.
+the `Work' subject for each of the days in the last week. This assumes
+that you write what you do everyday, which is the very reason you are
+using this software!
 
    The records-mode allows concatenation of records and record files.
 Both are concatenated in date order.
@@ -632,7 +639,7 @@ Conclusions and Acknowledgments
 
    As promised, the *records-mode* for emacs allows creation of an
 online diary with extensive linking and indexing facilities. This diary
-has infact become my major desktop tool. I write most of my documents,
+has in fact become my major desktop tool. I write most of my documents,
 small and large, as records distributed over different days and
 records-mode does the tracking for me. If you have noticed, records
 provides an editor and a browser all in one. You can browse your records
@@ -693,9 +700,11 @@ Concept and Function Index
 * Location:                              Location.
 * records-concatenate-record-files:      Concatenating Records.
 * records-concatenate-records:           Concatenating Records.
+* records-create-todo:                   Organizing your TODOs.
 * records-decrypt-record:                Security.
 * records-delete-record:                 Manipulating Records.
 * records-encrypt-record:                Security.
+* records-get-todo:                      Organizing your TODOs.
 * records-goto-calendar:                 Misc Commands.
 * records-goto-down-record:              Record Traversal.
 * records-goto-index:                    Records Index File.
@@ -713,7 +722,6 @@ Concept and Function Index
 * records-link-as-kill:                  Misc Commands.
 * records-mark-record:                   Misc Commands.
 * records-rename-record:                 Manipulating Records.
-* records-todo:                          Organizing your TODOs.
 * records-underline-line:                Misc Commands.
 * TODO:                                  Organizing your TODOs.
 * Tutorial:                              Tutorial.
@@ -730,6 +738,8 @@ Key Index
 * C-c / d:                               Security.
 * C-c / e:                               Security.
 * C-c / f:                               Concatenating Records.
+* C-c / g:                               Organizing your TODOs.
+* C-c / t:                               Organizing your TODOs.
 * C-c C-b:                               Record Traversal.
 * C-c C-c:                               Misc Commands.
 * C-c C-d:                               Manipulating Records.
@@ -753,25 +763,25 @@ Key Index
 
 
 Tag Table:
-Node: Top1187
-Node: Location2348
-Node: Installation2572
-Node: Tutorial7553
-Node: Basic Use9609
-Node: What is a Record10204
-Node: Record File11427
-Node: Record Traversal11781
-Node: Records Index File14849
-Node: Manipulating Records15698
-Node: Misc Commands16535
-Node: Records Administration17519
-Node: Advanced Use18532
-Node: Organizing your TODOs18914
-Node: Security21324
-Node: Concatenating Records22831
-Node: Conclusion25381
-Node: Variable Index26714
-Node: Concept Index27924
-Node: Key Index29773
+Node: Top1189
+Node: Location2350
+Node: Installation2574
+Node: Tutorial7555
+Node: Basic Use9611
+Node: What is a Record10206
+Node: Record File11429
+Node: Record Traversal11783
+Node: Records Index File14894
+Node: Manipulating Records15743
+Node: Misc Commands16580
+Node: Records Administration17564
+Node: Advanced Use18577
+Node: Organizing your TODOs18959
+Node: Security21801
+Node: Concatenating Records23308
+Node: Conclusion25854
+Node: Variable Index27188
+Node: Concept Index28398
+Node: Key Index30311
 
 End Tag Table
