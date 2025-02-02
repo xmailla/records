@@ -1,7 +1,7 @@
 ;;;
 ;;; records-vars.el
 ;;;
-;;; $Id: records-vars.el,v 1.6 1999/05/28 04:49:02 ashvin Exp $
+;;; $Id: records-vars.el,v 1.7 1999/07/12 18:55:06 ashvin Exp $
 ;;;
 ;;; Copyright (C) 1996 by Ashvin Goel
 ;;;
@@ -139,6 +139,13 @@ If nil, the output is appended.")
       (setq running-xemacs t)
     (setq running-xemacs nil)  
     ))
+
+;;; Adding emacs compatibility code here, just so it is loaded first.
+(if (not (fboundp 'first))
+    (fset 'first 'car))
+
+(if (not (fboundp 'second))
+    (fset 'second 'cadr))
 
 (provide 'records-vars)
 
