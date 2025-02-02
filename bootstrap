@@ -1,0 +1,10 @@
+#! /bin/sh
+
+set -x
+if test -f Makefile; then
+    make distclean
+fi
+rm -f *.cache *.status *.log aclocal.m4
+aclocal
+automake --add-missing --copy
+autoreconf -W gnu

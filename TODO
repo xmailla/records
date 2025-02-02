@@ -1,0 +1,7 @@
+-- Add more documentation.
+-- Disable read-only text when it is copied somewhere.
+-- Add more functionality in the index mode.
+-- Simple key strokes on notes subjects.
+-- records-directory-structure should have more possibilities:
+   - example concat (year, month).
+-- emacs front end to recordsadmin.

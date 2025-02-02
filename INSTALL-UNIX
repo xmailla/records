@@ -1,0 +1,126 @@
+Make sure that you read the README file first.
+
+1. If you are installing records on Windows, read INSTALL-NT first.
+
+2. Run ./configure or ./configure --enable-xemacs
+
+The --enable-xemacs flag ensures that the elisp files are compiled
+using xemacs. You MUST use this option if you use xemacs.
+
+The configure program is provided in the source (do not run your own
+configure). If you want to specify the directory in which recordsadmin
+should be installed, you could say something like
+
+./configure --prefix $HOME
+
+Make sure ${bindir} (generally ${prefix}/bin) in the Makefile exists
+and is writable by you.
+
+Note: if you are getting source from CVS, you will have to generate
+./configure by running autoconf first.
+
+3. Run make install (or just make)
+
+After the lisp files have been compiled, this procedure is interactive
+and asks for user defaults. Note: The lisp files are not installed
+anywhere.
+
+4. The changes to your system that "make install" does are the
+following:
+
+   a) Adds ~/.emacs-records (if this file already exists, it converts
+      only specific parts of the file).
+
+   b) Adds a couple of lines to ~/.emacs
+
+   c) Adds recordsadmin to ${bindir}
+
+   d) Creates your records directory (~/records or whatever you have
+      specified during make) and adds some indexes there. If this
+      directory already exists, then it reindexes your records and
+      converts them to the new format. If you don't trust the
+      conversion, I would really suggest that you KEEP A COPY OF YOUR
+      RECORDS BEFORE DOING THE CONVERSION. Check the conversion by
+      hand to make sure that the conversion is fine. Specially look
+      for the following: HAVE EMBEDDED LINKS IN YOUR RECORDS BEEN
+      CONVERTED CORRECTLY. Please tell me if this conversion is not
+      okay.
+
+5. Copy the next set of lines from ";;;; records-mode" to 
+";;;; records-mode end" into your ~/.emacs. Make sure that these lines
+occur after the following line (which has been automatically added
+during install) in your .emacs (load "~/.emacs-records") I did not
+automate this process since users may wish to change the key
+settings. Users will probably use the records-goto-today function most
+often. Bind it to a simple key.
+
+;;;; records-mode
+; Define key bindings for functions called from outside records mode
+
+; The preferred binding for records-goto-today - uncomment to use it
+(define-key global-map [?\C-c ?n] 'records-goto-today)
+(define-key global-map [?\C-c ?-] 'records-underline-line)
+
+; The Ctrl-x n map
+(define-key global-map [?\C-x ?n ?t] 'records-goto-today)
+(define-key global-map [?\C-x ?n ?r] 'records-insert-record-region)
+(define-key global-map [?\C-x ?n ?b] 'records-insert-record-buffer)
+(define-key global-map [?\C-x ?n ?l] 'records-insert-link)
+
+; Hook up to the calendar mode
+(add-hook 'calendar-load-hook 
+	  (function
+	   (lambda ()
+	     (define-key calendar-mode-map "n" 'records-calendar-to-record))))
+
+; Hook up to the latex mode
+(add-hook 'LaTeX-mode-hook
+          (function
+           (lambda () 
+             (define-key LaTeX-mode-map "\C-clw" 'records-widen-latex))))
+
+; Hook to insert a template when a record is inserted.
+; See function records-insert-template
+(add-hook 'records-make-record-hook 
+          (function (lambda ()
+                      (records-insert-template current-prefix-arg))))
+;;;*** OPTIONAL ***;;;
+
+; If you like abbrev mode 
+(add-hook 'records-mode-hooks
+          (function 
+           (lambda ()
+             (abbrev-mode 1))))
+
+; If you like to use auto filling and/or filladapt modes while editing text.
+; If you have these functions in the text-mode-hook, then you don't need 
+; them here. 
+(add-hook 'records-mode-hooks 
+      (function 
+       (lambda ()
+         (turn-on-auto-fill)
+         (turn-on-filladapt-mode)
+         )))
+
+; If you want to always start up in outline mode
+(add-hook 'records-mode-hooks 'records-outline-mode)
+
+; Using imenu: imenu will invoke a popup menu of records subjects
+; 1. In Xemacs:
+; (define-key global-map [(shift button3)] 'imenu)
+; 2. In gnu emacs:
+; (define-key global-map [(shift mouse-3)] 'imenu)
+
+; If you want to be brought to today's record on startup
+(records-goto-today)
+
+;;;; records-mode end
+
+6. Restart your emacs (unless you know how to evaluate regions in a
+buffer - in which case get the key bindings and load in
+.emacs-records).
+
+After restarting emacs, go back to the README file for using records
+mode in emacs.
+
+Ashvin Goel (ashvin@users.sourceforge.net)

@@ -1,0 +1,126 @@
+Records NEWS -- history of user-visible changes.
+
+    Copyright (C) 2009 by Xavier Maillard <xma@gnu.org>
+    See end of this file for the license conditions.
+
+    Latest release is available from the following address:
+
+           <URL:http://launchpad.net/records/+download>
+    
+    If you find a bug in records-mode, please report it in our
+    bugtracker at <URL:http://bugs.launchpad.net/emacs>. If you were
+    unable to use our webclient, you can still report a bug using M-x
+    records-bug-report which will submit it using your e-mail client.
+
+    This file is covering all user-visible changes from 1.3 to 1.5
+    series. For a real and deeper explanation of all or part of them,
+    please report to the ChangeLog file (included in the distribution)
+    or use GNU Bazaar command: bzr log.
+
+    Everybody is highly encouraged to upgrade to latest release
+    (always).
+
+* Changes in 1.5
+** Administrativia
+
+*** New maintainer. Xavier Maillard <xma@gnu.org> has taken over the
+    maintainer ship. Thanks go to all of you who participated to the
+    records developement till now. List of contributors is still in the
+    AUTHORS file.
+
+*** This is the first version released under GPL3+
+
+*** Project hosting url has changed. The project is now hosted onto
+    launchpad.net site at:
+
+        http://launchpad.net/~emacs+records/records
+
+        Bug reports, questions, etc are to be filled there.
+
+** Build and installation
+
+*** Better use of the autotools to ease package maintainance. Beginning
+    with the v1.5.0 release, records.el has been cleaned up to more
+    effectively make use of autoconf and automake. It should now be much
+    easier to install. See the FAQ for hints on maintaining the package
+    now.
+
+*** Try to follow GNU standards as much as possiblee. Thus, starting
+    with 1.5.1, records build system has dropped all exotic things and
+    hacks.
+
+*** Emacs lisp files are compiled using a modified automake `elisp-comp'
+    script.
+
+*** User can now choose an Emacs flavor by specifying --with-emacs or
+    --with-xemacs.
+
+*** Byte-compiling the lisp sources is now totally silent.
+ 
+*** Internal copy of Mailcrypt has been removed. `configure' has been
+    modified in order to choose the best mailcrypt distribution or let
+    the user choose where it is installed.
+
+     ./configure --with-mailcrypt=/tmp/mailcrypt
+
+** Macros
+
+*** all macros are now centralized into records-macro.el file. If a
+    module needs a macro at compilation time, you _must_ do as follow:
+
+       (eval-when-compile (require 'records-macro))
+
+*** macros are now using the new backquote style syntax thus removing
+    automatically compatibility for emacsen < 19.34 (or so). See section
+    below.
+
+** Compatibility
+
+*** No effort will be made to support old emacsen (< 20.x). If it works
+    for you, that's okay, if not, report back and try to include a
+    patch.
+
+** Miscelleanous
+
+*** proposal/ has been bailed out. proposal is meant to be the next
+    generation for records. It is tracked in a separate Bazaar branch.
+    Proposal needs to be synced with latest stable release of records.
+    Testing is not harder than doing:
+
+       bzr branch lp:records.exp
+
+** List of fixed bugs
+   See above for ways to report bugs to us.
+*** 
+***
+***
+***
+ 
+
+* Changes in 1.4
+
+* Changes in 1.3
+
+----------------------------------------------------------------------
+This file is part of Records.
+
+Records is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your
+option) any later version.
+
+Records is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+more details.
+
+You should have received a copy of the GNU General Public License
+along with Records.  If not, see <http://www.gnu.org/licenses/>.
+
+
+Local variables:
+mode: text
+mode: outline
+paragraph-separate: "[  ^L]*$"
+fill-column: 72
+end:

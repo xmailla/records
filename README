@@ -1,0 +1,131 @@
+Copyright (C) ?-2003 Ashvin Goel ashvin@users.sourceforge.net>
+Copyright (C) 2009 Xavier Maillard <xma@gnu.org>.
+See the end of the file for license conditions.
+
+This directory tree holds version 1.5.1 of records, an online diary
+creator for GNU Emacs.
+
+* Description
+
+This is records 1.5.1, an Emacs mode which allows creation of an
+online diary (see the file NEWS for information on new features and
+other user-visible changes in recent versions of records).
+
+Users can create records in their diary for different subjects
+each day. Records provides linking and indexing facilities so that users
+can easily collect their thoughts on a subject over a period of
+time. For instance, it is easy to find out whether you were thinking of
+quitting school two months back! Records provides a reminder service by
+collecting your list of 'to do' things. A simple integration with the
+Emacs calendar is also available.
+
+Home page:    http://launchpad.net/records
+Project page: http://launchpad.net/~emacs+records/records
+Wiki page:    http://www.emacswiki.org/cgi-bin/wiki/RecordsMode
+Mailing list: None
+MUC room:     None
+
+* Dependencies
+** GNU Emacs
+
+records.el is supposed to work on various Emacs flavors starting at
+20.x release. It has been tested also with latest developement version
+(23.x).
+
+** XEmacs
+
+records.el is known to work with Xemacs 21.x or newer. For older
+versions, please tell us how it goes.
+
+** Mailcrypt
+
+records will use the MAILCRYPT library to crypt sensible records
+(either full records files or part of it).
+
+* Installation
+
+The file INSTALL in this directory says how to build and install
+records on various systems, once you have unpacked or checked out the
+entire Emacs file tree.
+
+For a quickstart, these commands may be enough:
+
+    ./configure
+    make
+    make install
+
+* Special notes for GNU Bazaar version
+
+If you are running records from GNU Bazaar, you may need to
+(re)generate the `configure' file and all its accompanying files.
+Doing so is no more than using our bootstrap script:
+    
+    ./bootstrap
+
+For this to work, you must have the GNU autotools installed (autoconf
+and automake)
+
+* Quickstart
+
+Make sure records is installed (or at least in your `load-path') and
+type key "Ctrl-c n" (for records-goto-today). This will get you
+today's records file. If you are starting fresh, it will be empty.
+
+To insert a records subject type "Ctrl-c Ctrl-i" or look for "Insert
+Record" in the menu. Once you have added a subject, you can start
+typing ... Regarding spaces in subject titles, look at the FAQ.
+
+Multiple subjects can be added in each day's records file. Infact the
+same subject can be added multiple times in each day's records file.
+
+For all the other functionality, look at the records menu. The menu
+has been divided so that most of the functionality at the top of the
+menu is related to records traversal (up, down, prev, next, goto etc).
+The middle section adds, deletes and renames records. The last section
+does administration tasks such as encryption, concatanation of records
+by subject or days etc. Make sure you look at the records TODO
+facility.
+
+Remember that if you have just one records file (today's) then records
+traversal's are not very useful!
+
+The program recordsadmin has been provided in order to do meta-level
+things - initialize (or reinitialize) your records software, change
+date format, change directory structure and recreate records indexes
+if they are broken (for example if your system crashes while emacs is
+updating your indexes on the fly). You should not need to use it in
+normal records use.
+
+The file INSTALL in this directory says how to build and install
+records on various systems, once you have unpacked or checked out the
+entire Emacs file tree.
+
+More informations are available in the records info manual.
+
+* Bugs
+
+You may encounter bugs in this release. If you do, report them (see
+manual on how to report a bug).
+
+
+This file is part of records.
+
+records is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation, either version 3 of the License, or (at your
+option) any later version.
+
+records is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License
+along with records. If not, see <http://www.gnu.org/licenses/>.
+
+Local variables:
+mode: text
+mode: outline
+paragraph-separate: "[  ^L]*$"
+fill-column: 72
+end:

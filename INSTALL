@@ -1,0 +1,112 @@
+Installation Instructions
+*************************
+
+Copyright (C) 2009 by Xavier Maillard <xma@gnu.org>.
+
+This file is free documentation; unlimited permission to copy,
+distribute and modify it.
+
+System Requirements
+===================
+
+Records has been succesfully used on GNU Emacs 22, GNU Emacs 23.
+
+For installation, it requires at least the following program versions:
+
+    - GNU autoconf 2.50 if sources taken from GNU Bazaar
+    - GNU automake 1.9  if sources taken from GNU Bazaar
+    - GNU make 3.81
+    - GNU texinfo 4.13
+
+On MS Windows, you need Posix programs for installation. These and other useful Posix utilities can be obtained from one of several projects:
+
+Basic Installation
+==================
+
+The simplest way to build and install Records is:
+
+    1. `cd' to the Records source directory. If you have taken Records
+    from the Bazaar sources, type "./bootstrap" in order to get an
+    up-to-date `configure' script.
+    
+    2. Type `./configure' to configure Records for your system.
+
+    3. Type `make' to build the byte-compild Lisp files a well as the
+    Info manual.
+
+    4. Type `make install' to install the Records Lisp files and the
+    Info manual.
+
+    5. You can remove the byte-compiled Lispp files and the Info
+    manual from the source directory by typing `make clean'. To also
+    remove the files that `configure' created, type `make distclean'.
+
+Installation Names
+==================
+
+By default, `make install' will install RECORDS's files in
+'/usr/local/share/emacs/site-lisp' and `/usr/local/info'. You can
+specify an installation prefix other than `/usr/local' by giving
+`configure' the option `--prefix=PREFIX'.
+
+            ./configure --prefix=/usr
+
+If your installed copy of Emacs is named something other than `emacs'
+or `xemacs', you will need to tell `make' where to find it so that it
+can correctly byte-compile the Records sources.
+
+For example, to for the use of XEmacs you might do this:
+
+            ./configure --with-xemacs
+   
+You can even pass  the command to be called:
+
+            ./configure --with-xemacs=xemacs21
+
+The syntax of Records file names is different for GNU Emacs and
+XEmacs. The Info manual will be generated for the Emacs flavor choosen
+in the `configure' phase. If you want the other version, you need to
+set the option `EMACS_INFO' to `make':
+   
+            ./configure --with-emacs
+            make EMACS_INFO=xemacs
+
+Also, the `--prefix=PREFIX' option to `configure' may not be general
+enough to set the paths you want. If not, you can declare the
+directories Lisp and Info files should be installed to.
+
+For example, to put the Lisp files in `$HOME/elisp' and the Info file
+in `$HOME/info', you would type:
+
+            ./configure --with-lispdir=$HOME/elisp --infodir=$HOME/info
+
+On MS Windows, given Emacs is installed at `C:/Program Files/Emacs', you should apply
+
+            ./configure --with-lispdir='C:/Program Files/Emacs/elisp' \
+                        --infodir='C:/Program Files/Emacs/info'
+           
+`make' supports the `DESTDIR' variale for staged installation (useful for distro packagers):
+            
+            make DESTDIR=/tmp install
+
+Running `configure' might result in errors or warnings. The output
+explains in detail what's going wrong.
+
+In case of errors, it is mandatory to fix them before continuation.
+This can be missing or wrong versions of `(x)emacs', (X)Emacs
+packages, `make', or `makeinfo'.
+
+Warnings let `configure' (and the whole installation process)
+continue, but parts of Records aren't installed. This can happen with
+missing or wrong versions of `texi2dvi' or `install-info'. Here you
+can decide yourself whether you want to renounce on the related
+feature ("records.dvi" file for printed output, Records entry in
+Info's "dir" file), or whether you want to adapt your $PATH
+environment variable, and rerun `configure'. An alternative is calling
+the missed parts manually later on.
+
+Suggestions/Bug Reports
+=======================
+
+Please fill all your suggestions for fixes, etc to
+http://launchpad.net/~emacs+records/records

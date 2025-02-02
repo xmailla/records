@@ -1,0 +1,230 @@
+2009-06-06  Xavier Maillard  <xma@gnu.org>
+
+	Verion 1.5.1 released.
+
+	* src/records-util.el (records-goto-calendar): require library
+	cal-move if `calendar-goto-date' is not bound.
+	(records-calendar-to-record): Ditto but require calendar if
+	`calendar-cursor-to-date' is not bound.
+	(require): quiet byte-compiler.
+
+	* src/records-dindex.el: silent byte-compiler; add missing
+	require.
+
+	* src/Makefile.am (my_lisp_sources): Remove records-autoload.el
+	which is already in dist_lisp_LISP.
+
+	* NEWS: update with latest informations.
+
+	* README: Ditto.
+	
+2009-06-04  Xavier Maillard  <xma@gnu.org>
+
+	* src/records.el (records-goto-record): switch buffer to
+	`records-mode' (bug#383389)
+
+2009-06-03  Xavier Maillard  <xma@gnu.org>
+
+	* src/records.el: remove circular require error. Add right
+	copyright.
+	(records-initialized): new variable. Initially called
+	`records-initialize'. This avoid confusion with the function of
+	the same name.
+	(records-initialized-p): new function.
+	(records-link-menu-map): New variable.
+	(records-mode): remove useless `make-local-hook'.
+	`imenu-prev-index-position-function' is already buffer local, do
+	not duplicate here. Same thing for
+	`imenu-extract-index-name-function'.
+
+	* src/records-util.el: quiet byte-compiler warnings.
+
+	* src/records-index.el (records-index-goto-mouse-link)
+	(records-index-goto-link): add autoload cookie.
+	(records-index-goto-date-tag): fix `error' usage.
+	(provide): remove circular require.
+
+2009-06-02  Xavier Maillard  <xma@gnu.org>
+
+	* src/records.el: remove all macros definitions and require
+	`records-macro' at compile time to avoid (invalid-function error)
+	at runtime (Bug#382304)
+	(records-subject-tag, records-subject-region)
+	(records-subject-link): use `forward-line' instead of `next-line'.
+
+	* src/records-tex.el (records-concatenate-records-latex): silent
+	byte-compiler by using `insert-file-contents' instead of its
+	interactive form.
+
+	* src/records-macro.el: new file. Centralize macros definitions.
+	This file is meant to be required at build time in a wrapped
+	`eval-when-compile' form. (Fixes Bug#382304).
+	(records-date-count-regexp, records-subject-regexp)
+	(records-subject-on-concat, records-date-on-concat, records-tag)
+	(records-index-subject-regexp): Fix incomplete switch to new-style
+	backquote.
+
+	* src/records-index.el: remove all macros definitions and require
+	`records-macro' at compile time to avoid (invalid-function error)
+	at runtime (Bug#382304)
+
+	* src/records-dindex.el: Ditto
+
+	* src/Makefile.am: add records-macro.el in the lisp_source list.
+
+	* src/records-load.el: deleted.
+
+2009-06-01  Xavier Maillard  <xma@gnu.org>
+
+	* configure.ac: remove records.el from the AC_CONFIG_FILES as it
+	no longer defines `records-version' variable.
+
+	* src/records.el.in: remove (renamed to src/records.el).
+
+	* .bzrignore: remove src/records.el entry
+
+	* src/records-version.el.in (records-version): use a defconst. Add
+	GPL header.
+
+	* src/records-index.el (records-index-subject-regexp): Fix
+	old-style backquote use and silent byte-compiler.
+
+	* src/records.el.in (records-goto-subject): use `forward-line'
+	instead of `previous-line'
+
+	* src/records-dindex.el (records-dindex-goto-date): fix wrong call
+	to `error' function.
+
+	* src/records.el.in (records-initialize)
+	(records-denormalize-date, records-normalize-date): Use mapc
+	instead of mapcar (silent byte-compiler)
+
+	* src/records-util.el (records-concatenate-record-files)
+	(records-concatenate-records-1): use string-to-number instead of
+	string-to-int
+
+	* src/records-dindex.el (records-dindex-delete-record)
+	(records-dindex-insert-record): ditto
+
+	* src/records-search.el (records-search-do-search): replace
+	beginning-of-buffer with (goto-char (point-min)).
+
+	* src/records.el.in (records-tag, records-date-on-concat)
+	(records-subject-on-concat, records-subject-regexp)
+	(records-date-count-regexp): Fix old-style backquote use and
+	silent byte-compiler.
+	(records-normalize-date, records-insert-record): use
+	string-to-number instead of string-to-int
+
+	* proposal/: remove.
+
+	* NEWS: add a note about the proposal distribution removal.
+	Add license informations.
+
+2009-05-31  Xavier Maillard  <xma@gnu.org>
+
+	* COPYING: new file. Add GPL3+ license.
+
+	* NEWS: add release notes.
+
+	* INSTALL: new file. Add useful installation instructions covering
+	special use case of the configure script.
+
+	* Makefile.am: add "release" target and a valid header.
+
+	* src/mailcrypt: remove directory.
+
+	* src/Makefile.am: fix records-templ.tex installation. Remove
+	records-load.el from the distribution list as we use elisp-comp to
+	build the elisp sources.
+
+	* configure.ac: remove AC_ARG_ENABLE for xemacs. We use
+	acinclude.m4 macros now (much powerful).
+
+2009-05-30  Xavier Maillard  <xma@gnu.org>
+
+	* src/: move all elisp sources into src
+
+	* doc/: move all documentations into doc
+
+	* bootstrap, doc/Makefile.am, src/Makefile.am, src/records-pkg.el.in,
+	src/records-version.el.in: new files.
+
+	* acinclude.m4, elisp-comp.in: ditto.
+
+	* configure.ac: change autoconf version requirement to 2.50. Use
+	macros defined in acinclude.m4. Fix recordsadmin location and all
+	our CONFIG_FILES files location.
+
+	* Makefile.am: cleanly build distribution (Bug#381476)
+
+	* .bzignore: new file.
+
+2009-05-29  Xavier Maillard  <xma@gnu.org>
+
+	* Makefile.am: add $(MAILCRYPT) to lisp_LISP to make elisp-comp
+	happy. Fixes bug #381120.
+
+2009-05-28  Xavier Maillard  <xma@gnu.org>
+
+	* records-autoloads.el, records-dindex.el, records-index.el,
+	records-load.el, records-search.el, records-tex.el,
+	records-util.el, records.el.in: update header (licensing).
+
+	* distributions: remove directory
+
+	* new maintainer (Xavier Maillard)
+
+2003-05-20  David Masterson  <dsm@rawbw.com>
+
+	* Makefile.am (MAILCRYPT): added mailcrypt to distribution (again)
+
+2003-05-19  David Masterson  <dsm@rawbw.com>
+
+	* configure.ac: changing name back to 'records' from 'records.el'
+	to keep in the spirit of the storage on SourceForge.
+
+2003-03-04  David Masterson  <dsm@rawbw.com>
+
+	* records.texi: Removed extra space from Info menu entry
+	information.
+
+2003-02-25  David Masterson  <dsm@rawbw.com>
+
+	* Makefile.am: adding comments to explain things
+
+	* records.texi (Top): added a statement on the VERSION of
+	records-mode that the documentation applies to for the Info
+	version of the documentation.
+
+2003-02-24  David Masterson  <dsm@rawbw.com>
+
+	* FAQ (use): added info. on maintenance.
+
+	* README: mentioned INSTALL-UNIX and reformatted to standard text
+	file fill-column size (always fill-paragraph on text files).
+
+	* recordsadmin.in: changing srcdirpath to lispdir as that is where
+	the lisp will be installed.
+
+	* records-vars.el.in: moved records-var.el to be a configure file
+	so that it will know where records-templ.tex was installed.  Maybe
+	it should be configurable?
+
+2003-02-22  David Masterson  <dsm@rawbw.com>
+
+	* records-vars.el: changing some defvars to defcustom and adding
+	expand-file-name to all file/directory name variables.
+
+2003-02-21  David Masterson  <dsm@rawbw.com>
+
+	* records-vars.el: adding a defgroup for records and putting the
+	group in packages.
+
+	* records.el.in: changing version to @VERSION@ and moving this
+	file to records.el.in to work with autoconf.
+
+2003-02-20  David Masterson  <dsm@rawbw.com>
+
+	* Converting to automake/autoconf and using ChangeLog from now
+	on.  This file is updated with add-change-log-entry.
