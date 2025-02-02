@@ -1,7 +1,7 @@
 ;;;
 ;;; records.el
 ;;;
-;;; $Id: records.el,v 1.24 1999/07/12 18:55:35 ashvin Exp $
+;;; $Id: records.el,v 1.25 1999/07/17 02:17:16 ashvin Exp $
 ;;;
 ;;; Copyright (C) 1996 by Ashvin Goel
 ;;;
@@ -16,7 +16,7 @@
 ;;; Internal variables - users shouldn't change
 ;;; The defvar is for internal documentation.
 ;;;
-(defconst records-version "1.4.1")
+(defconst records-version "1.4.2")
 
 (defvar records-mode-menu-map nil
   "Records Menu Map. Internal variable.")
@@ -226,7 +226,7 @@ The ndate is normalized and in (day month year) format."
 		(len (nth 2 x)))
 	    (setq date (concat 
 			(substring date 0 start)
-			(format (concat "%0" len "d") (nth i ndate))
+			(format (concat "%0" (int-to-string len) "d") (nth i ndate))
 			(substring date (+ start len))))
 	    (setq i (1+ i))))
        records-date))

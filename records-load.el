@@ -4,4 +4,4 @@
 	   (if (member (, mem) (, list)) list (cons (, mem) (, list))))))
 
 (eval-when-compile (cons-unique (expand-file-name ".") load-path))
-(eval-when-compile (cons-unique (expand-file-name "./encrypt") load-path))
+(eval-when-compile (cons-unique (expand-file-name "./mailcrypt") load-path))
