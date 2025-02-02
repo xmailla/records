@@ -4,7 +4,8 @@ START-INFO-DIR-ENTRY
 * Records: (records).        Records: personal diary software
 END-INFO-DIR-ENTRY
 
-   Records Copyright (C) 1995-2000 Ashvin Goel.
+   Records Copyright (C) 1995-2000 Ashvin Goel.  Copyright (C) 2009
+Xavier Maillard.
 
    Permission is granted to make and distribute verbatim copies of this
 manual provided the copyright notice and this permission notice are
@@ -39,8 +40,8 @@ school two months back! Records provides a reminder service by
 collecting your list of 'to do' things. A simple integration with the
 Emacs calendar is also available.
 
-   This is edition 1.5.1 of the documentation for records-mode version
-1.5.1 and was last updated on 28 May 2009.
+   This is edition 1.5.2 of the documentation for records-mode version
+1.5.2 and was last updated on 7 June 2009.
 
 * Menu:
 
@@ -61,9 +62,7 @@ File: records.info,  Node: Location,  Next: Installation,  Prev: Top,  Up: Top
 **********************
 
 You can get the latest version of records from
-`http://www.cse.ogi.edu/~ashvin/software.html'. Soon this project will
-be migrating to `http://sourceforge.net'. Then the latest version will
-be available from `http://sourceforge.net/projects/records'.
+`http://launchpad.net/records/+download'.
 
 
 File: records.info,  Node: Installation,  Next: Tutorial,  Prev: Location,  Up: Top
@@ -843,8 +842,8 @@ daily) and I found that inconvenient.
    Kaarthik Sivakumar <sivakuma@mail.eecis.udel.edu> insisted on
 documentation and that forced me to write the info pages.
 
-   Please send me mail at <ashvin@users.sourceforge.net> if you find
-this software useful.
+   Please send me mail at <xma@gnu.org> if you find this software
+useful.
 
 
 File: records.info,  Node: Variable Index,  Next: Concept Index,  Prev: Conclusion,  Up: Top
@@ -1019,27 +1018,27 @@ Key Index
 
 
 Tag Table:
-Node: Top1161
-Node: Location2438
-Node: Installation2818
-Node: Tutorial8987
-Node: Basic Use11042
-Node: What is a Record11638
-Node: Record File12977
-Node: Record Traversal13336
-Node: Records Index File17207
-Node: Manipulating Records18063
-Node: Misc Commands19929
-Node: Records Administration21893
-Node: Advanced Use22912
-Node: Organizing your TODOs23429
-Node: Security26273
-Node: Concatenating Records28056
-Node: Editing In LaTeX mode32579
-Node: Editing In Outline mode33654
-Node: Conclusion34104
-Node: Variable Index35445
-Node: Concept Index38491
-Node: Key Index42445
+Node: Top1198
+Node: Location2475
+Node: Installation2694
+Node: Tutorial8863
+Node: Basic Use10918
+Node: What is a Record11514
+Node: Record File12853
+Node: Record Traversal13212
+Node: Records Index File17083
+Node: Manipulating Records17939
+Node: Misc Commands19805
+Node: Records Administration21769
+Node: Advanced Use22788
+Node: Organizing your TODOs23305
+Node: Security26149
+Node: Concatenating Records27932
+Node: Editing In LaTeX mode32455
+Node: Editing In Outline mode33530
+Node: Conclusion33980
+Node: Variable Index35304
+Node: Concept Index38350
+Node: Key Index42304
 
 End Tag Table

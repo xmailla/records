@@ -1,6 +1,32 @@
+2009-06-07  Xavier Maillard  <xma@gnu.org>
+
+	Version 1.5.2 released.
+
+	* src/records.el: copyright updates.
+
+	* doc/records.texi: copyright updates and download location change.
+
+	* README: change Ashvin maintainance period.
+
+	* AUTHORS: add myself as current maintainer.
+
+	* debian/control: update conflict fields.
+
+	* debian/changelog: bump version.
+
+	* debian/: new directory. Contains the required file to build a
+	Debian package. This is a copy&paste of what was available when
+	records was available in the Debian repositories. (fix
+	Bug lp:384430).
+
+	* debian/rules: since lisp source files are now in src/ and the
+	documentation in doc/, update all install rules. Add targets to
+	build info and ps files. Distribute *all* files (even zero sized
+	one).
+
 2009-06-06  Xavier Maillard  <xma@gnu.org>
 
-	Verion 1.5.1 released.
+	Version 1.5.1 released.
 
 	* src/records-util.el (records-goto-calendar): require library
 	cal-move if `calendar-goto-date' is not bound.

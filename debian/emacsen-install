@@ -1,0 +1,74 @@
+#!/bin/sh
+
+set -e
+
+PACKAGE=
+[ "$PACKAGE" ]
+
+FLAVOR="$1"
+
+EFLAGS="-batch -q -l lpath.el -f batch-byte-compile"
+
+inst () {
+    echo -n "install/$PACKAGE: Byte-compiling for ${FLAVOR}..."
+
+    install -m 755 -d "/usr/share/$FLAVOR/site-lisp/$PACKAGE/"
+
+    cp /usr/share/emacs/site-lisp/records/records-index.el \
+	/usr/share/emacs/site-lisp/records/records-dindex.el \
+	/usr/share/emacs/site-lisp/records/records-util.el \
+	/usr/share/emacs/site-lisp/records/records-vars.el \
+	/usr/share/emacs/site-lisp/records/records-autoloads.el \
+	/usr/share/emacs/site-lisp/records/records-search.el \
+	/usr/share/emacs/site-lisp/records/records.el \
+	"/usr/share/${FLAVOR}/site-lisp/$PACKAGE/"
+    cat <<-EOF >"/usr/share/$FLAVOR/site-lisp/$PACKAGE/lpath.el"
+		(setq load-path (cons nil load-path))
+	EOF
+	(cd "/usr/share/$FLAVOR/site-lisp/$PACKAGE/" \
+	    && "$FLAVOR" $EFLAGS \
+		"/usr/share/${FLAVOR}/site-lisp/$PACKAGE/records.el" \
+		"/usr/share/${FLAVOR}/site-lisp/$PACKAGE/records-index.el" \
+		"/usr/share/${FLAVOR}/site-lisp/$PACKAGE/records-dindex.el" \
+		"/usr/share/${FLAVOR}/site-lisp/$PACKAGE/records-util.el" \
+		"/usr/share/${FLAVOR}/site-lisp/$PACKAGE/records-autoloads.el" \
+		"/usr/share/${FLAVOR}/site-lisp/$PACKAGE/records-vars.el" \
+		"/usr/share/${FLAVOR}/site-lisp/$PACKAGE/records-search.el" \
+	    >CompilationLog 2>&1)
+	gzip -9qf "/usr/share/$FLAVOR/site-lisp/$PACKAGE/CompilationLog"
+	rm -f "/usr/share/$FLAVOR/site-lisp/$PACKAGE"/*.el
+	echo "done."
+}
+
+case "$PACKAGE" in
+    records-gnuemacs)
+	case "$FLAVOR" in
+	    emacs)
+		;;
+	    emacs21)
+		inst
+		;;
+	    *)
+		;;
+	esac
+	;;
+
+    records-xemacs)
+	case "$FLAVOR" in
+	    emacs)
+		;;
+	    xemacs21)
+		inst
+		;;
+	    *)
+		;;
+	esac
+	;;
+
+    *)
+	echo "install/records: ERROR! Unknown package $PACKAGE." 1>&2
+	exit 2
+	;;
+esac
+
+exit 0;

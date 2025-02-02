@@ -1,0 +1,57 @@
+#!/bin/sh
+
+set -e
+
+PACKAGE=
+[ "$PACKAGE" ]
+
+FLAVOR="$1"
+echo "remove/$PACKAGE: Handling removal of emacsen flavor $FLAVOR"
+
+
+remove () {
+    echo -n "records: purging byte-compiled files for ${FLAVOR}..."
+    rm -f "/usr/share/$FLAVOR/site-lisp/$PACKAGE/records-index.elc" \
+	"/usr/share/$FLAVOR/site-lisp/$PACKAGE/records-autoloads.elc" \
+	"/usr/share/$FLAVOR/site-lisp/$PACKAGE/records-dindex.elc" \
+	"/usr/share/$FLAVOR/site-lisp/$PACKAGE/records-util.elc" \
+	"/usr/share/$FLAVOR/site-lisp/$PACKAGE/records-vars.elc" \
+	"/usr/share/$FLAVOR/site-lisp/$PACKAGE/records-search.elc" \
+	"/usr/share/$FLAVOR/site-lisp/$PACKAGE/records.elc" \
+	"/usr/share/$FLAVOR/site-lisp/$PACKAGE/CompilationLog.gz"
+    rmdir "/usr/share/$FLAVOR/site-lisp/$PACKAGE" || true
+    echo "done."
+}
+
+case "$PACKAGE" in
+    records-gnuemacs)
+	case "$FLAVOR" in
+	    emacs)
+		;;
+	    emacs21)
+		remove
+		;;
+	    *)
+		;;
+	esac
+	;;
+
+    records-xemacs)
+	case "$FLAVOR" in
+	    emacs)
+		;;
+	    xemacs21)
+		remove
+		;;
+	    *)
+		;;
+	esac
+	;;
+
+    *)
+	echo "remove/records: ERROR! Unknown package $PACKAGE." 1>&2
+	exit 2
+	;;
+esac
+
+exit 0;

@@ -28,6 +28,7 @@ END-INFO-DIR-ENTRY
 @ifinfo
 Records
 Copyright (C) 1995-2000 Ashvin Goel.
+Copyright (C) 2009 Xavier Maillard.
 
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
@@ -65,6 +66,7 @@ by the Free Software Foundation.
 
 @vskip 0pt plus 1filll
 Copyright @copyright{} 1995-2000 Ashvin Goel.
+Copyright @copyright{} 2009 Xavier Maillard.
 
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
@@ -122,10 +124,7 @@ version @value{VERSION} and was last updated on @value{UPDATED}.
 @cindex Download
 
 You can get the latest version of records from
-@uref{http://www.cse.ogi.edu/~ashvin/software.html}. Soon this project
-will be migrating to @uref{http://sourceforge.net}. Then the latest
-version will be available from
-@uref{http://sourceforge.net/projects/records}.
+@uref{http://launchpad.net/records/+download}.
 
 @node Installation, Tutorial, Location, Top
 @chapter Installation
@@ -959,8 +958,8 @@ daily) and I found that inconvenient.
 Kaarthik Sivakumar @email{sivakuma@@mail.eecis.udel.edu} insisted on
 documentation and that forced me to write the info pages.
 
-Please send me mail at @email{ashvin@@users.sourceforge.net} if you find
-this software useful.
+Please send me mail at @email{xma@@gnu.org} if you find this software
+useful.
 
 @node Variable Index, Concept Index, Conclusion, Top
 @unnumbered Variable Index

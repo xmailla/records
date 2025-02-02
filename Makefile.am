@@ -28,7 +28,7 @@ AUTOMAKE_OPTIONS = 1.9
 
 SUBDIRS = src doc
 
-EXTRA_DIST = FAQ INSTALL-NT INSTALL-UNIX bootstrap
+EXTRA_DIST = FAQ INSTALL-NT INSTALL-UNIX bootstrap debian
 
 MAINTAINERCLEANfILES = Makefile.in aclocal.m4 \
 	config.guess config.sub configure \

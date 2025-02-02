@@ -1,0 +1,44 @@
+Source: records
+Section: editors
+Priority: optional
+Maintainer: Tommi Virtanen <tv@debian.org>
+Standards-Version: 3.6.1
+
+Package: records-common
+Architecture: all
+Description: Save and index notes in Emacs environment
+ Records-mode is a major mode for editing and indexing notes.
+ Notes are per-day files containing one or more subjects,
+ subjects from different days are indexed and can be traversed,
+ etc.
+ .
+ This package contains files common to GNU Emacs and XEmacs. You
+ probably want to install either records-gnuemacs or records-xemacs.
+
+Package: records-gnuemacs
+Architecture: all
+Depends: emacs21, mailcrypt, perl5, records-common
+Provides: records
+Replaces: records
+Conflicts: records (<< 1.5.1-1)
+Description: Save and index notes in Emacs environment
+ Records-mode is a major mode for editing and indexing notes.
+ Notes are per-day files containing one or more subjects,
+ subjects from different days are indexed and can be traversed,
+ etc.
+ .
+ This package contains support for GNU Emacs.
+
+Package: records-xemacs
+Architecture: all
+Depends: xemacs21, perl5, records-common
+Provides: records
+Replaces: records
+Conflicts: records (<< 1.5.1-1)
+Description: Save and index notes in Emacs environment
+ Records-mode is a major mode for editing and indexing notes.
+ Notes are per-day files containing one or more subjects,
+ subjects from different days are indexed and can be traversed,
+ etc.
+ .
+ This package contains support for XEmacs.

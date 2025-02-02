@@ -73,7 +73,7 @@ cp "$@" $tempdir
 (
   cd $tempdir
   echo "(setq load-path (cons nil load-path))" > script
-  echo "(push \"/tmp/mailcrypt\" load-path)" >> script
+  echo "(push \"no\" load-path)" >> script
   $EMACS -batch -q -l script -f batch-byte-compile *.el || exit $?
   mv *.elc ..
 ) || exit $?

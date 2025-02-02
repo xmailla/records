@@ -1,0 +1,130 @@
+records (1.5.2-1.0) unstable; urgency=low
+
+  * New upstream version.
+
+ -- Xavier Maillard <xma@gnu.org>  Sun, 08 Jun 2009 14:39:37 +0100
+
+records (1.5.1-1.0) unstable; urgency=low
+
+  * Non-maintainer upload.
+
+  * New upstream version.
+
+  * Upstream moved to SourceForge.
+
+  * rules: lisp source files are now in src/ and the documentation in
+	doc/. Ack. Added targets to build info and ps files.
+	Distribute *all* files (even zero sized one).
+
+ -- Xavier Maillard <xma@gnu.org>  Sun, 08 Jun 2009 11:04:15 +0100
+
+records (1.4.9-4.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * records-common: Get rid of the /usr/doc link in postinst 
+    (Closes: #359563).
+  * records-gnuemacs: Get rid of the /usr/doc link in postinst
+    (Closes: #359570).
+  * records-xemacs: Get rid of the /usr/doc link in postinst 
+    (Closes: #359573).
+
+ -- Amaya Rodrigo Sastre <amaya@debian.org>  Mon, 17 Jul 2006 20:53:25 +0200
+
+records (1.4.9-4) unstable; urgency=low
+
+  * Mention records-search.el in emacs install and remove scripts. This
+    makes M-x records-search work for me (Closes: #153876).
+  * Remove support for emacs20 and mule2, they have been removed from
+    Debian (Closes: #232784).
+  * Install info file to info directory (Closes: #178592).
+  * Different long descriptions for common/gnuemacs/xemacs (Closes:
+    #135921).
+  * Policy update: 3.5.6 -> 3.6.1: no longer link to undocumented(7)
+  
+ -- Tommi Virtanen <tv@debian.org>  Sat,  7 Aug 2004 22:48:34 +0300
+
+records (1.4.9-3) unstable; urgency=low
+
+  * debian/README.Debian: Typo.
+  * debian/control: Change section to editors, as it is in the overrides.
+  * debian/emacsen-remove: Clean up the .elc files (Closes: #122605).
+
+ -- Tommi Virtanen <tv@debian.org>  Sat,  5 Jan 2002 15:37:51 +0200
+
+records (1.4.9-2) unstable; urgency=low
+
+  * Split the package into two to work around the emacs mailcrypt issues. 
+    Closes: #84789.
+  * Updated Standards-Version.
+
+ -- Tommi Virtanen <tv@debian.org>  Fri,  9 Nov 2001 21:45:34 +0200
+
+records (1.4.9-1) unstable; urgency=low
+
+  * New upstream version.
+  * Include records.ps in the package.
+  * Depend on emacs20 | emacsen, need a real package there first.
+  * Get rid of dh_suidregister.
+  * Install records-templ.tex into examples.
+  * Upstream moved to SourceForge.
+
+ -- Tommi Virtanen <tv@debian.org>  Mon, 16 Apr 2001 01:02:20 +0300
+
+records (1.4.8-1) unstable; urgency=low
+
+  * New upstream version.
+
+ -- Tommi Virtanen <tv@debian.org>  Sun, 16 Apr 2000 17:56:49 +0300
+
+records (1.4.3-2) unstable; urgency=low
+
+  * Added dependency to mailcrypt|xemacs20|xemacs21 (XEmacs has
+    mailcrypt bundled). (Closes: #49560, #60133, #61237).
+  * Upgrade to policy 3.1.1, added Build-Depends
+  * New upstream coming soon, but as a separate upload.
+
+ -- Tommi Virtanen <tv@debian.org>  Sun, 16 Apr 2000 17:03:50 +0300
+
+records (1.4.3-1) unstable; urgency=low
+
+  * New upstream source.
+  * Added upstream NEWS as changelog.
+  * FHS.
+  * Updated to policy 3.0.0
+  * Moved the build stuff to binary-indep
+  * Actually use dh_installemacsen (Closes: #36334)
+
+ -- Tommi Virtanen <tv@debian.org>  Sat,  6 Nov 1999 15:27:54 +0200
+
+records (1.3-2) unstable; urgency=low
+
+  * Depend on perl5 instead of perl
+
+ -- Tommi Virtanen <tv@debian.org>  Thu,  1 Jul 1999 23:36:42 +0300
+
+records (1.3-1) unstable; urgency=low
+
+  * New upstream source
+  * Remove recordsadmin on debian/rules clean
+
+ -- Tommi Virtanen <tv@debian.org>  Sun, 30 May 1999 22:17:10 +0300
+
+records (1.2-3) unstable; urgency=low
+
+  * Remembered to fill in debian/copyright.
+
+ -- Tommi Virtanen <tv@debian.org>  Mon, 25 Jan 1999 01:53:39 +0200
+
+records (1.2-2) unstable; urgency=low
+
+  * Made it Architecture: all
+
+ -- Tommi Virtanen <tv@debian.org>  Sun, 17 Jan 1999 22:01:21 +0200
+
+records (1.2-1) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Tommi Virtanen <tv@debian.org>  Thu,  3 Dec 1998 14:37:11 +0200
+
+

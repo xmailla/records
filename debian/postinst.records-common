@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+
+PACKAGE=
+[ "$PACKAGE" ]
+
+if [ "$1" = "configure" ]; then
+	if [ -d /usr/doc -a -h /usr/doc/$PACKAGE -a -d /usr/share/doc/$PACKAGE ]; then
+		rm -f /usr/doc/$PACKAGE
+	fi
+
+	install-info --quiet --section "Emacs" "Emacs" \
+	    --description="Major mode for editing and indexing notes" \
+	    /usr/share/info/records.info
+fi

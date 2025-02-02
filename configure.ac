@@ -4,7 +4,7 @@ dnl
 
 
 dnl Remember to update the version
-AC_INIT([records], [1.5.1],[http://launchpad.net/~emacs+records],[records])
+AC_INIT([records], [1.5.2],[http://launchpad.net/~emacs+records],[records])
 AC_MSG_NOTICE([$PACKAGE_STRING])
 dnl Need this version.
 AC_PREREQ(2.50)

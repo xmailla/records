@@ -1,0 +1,17 @@
+Emacs records-mode for Debian
+-----------------------------
+
+To start using records-mode, run recordsadmin -i
+
+If you want, you can add the following to your .emacs:
+
+; If you like abbrev mode 
+(add-hook 'records-mode-hooks
+    (function
+     (lambda ()
+       (abbrev-mode 1))))
+
+; If you want to be brought to today's record on startup
+(records-goto-today)
+
+Tommi Virtanen <tv@debian.org>, Thu,  3 Dec 1998 14:37:11 +0200

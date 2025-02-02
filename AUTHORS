@@ -1,7 +1,11 @@
-Original Author:
+Current maintainer (as of 2009):
+Xavier Maillard <xma@gnu.org>
+
+Original Author (1995-2000):
 Ashvin Goel (ashvin@users.sourceforge.net)
 
 Automake/Autoconf add-ons:
 David Masterson (TBD)
 
-
+Experimental stuff:
+Kevin A. Burton

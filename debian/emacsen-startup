@@ -1,0 +1,32 @@
+;; 
+;; /etc/emacs/site-start.d/50records.el
+;;
+
+; Define key bindings for functions called from outside records mode
+
+; The preferred binding for records-goto-today - uncomment to use it
+(define-key global-map [?\C-c ?n] 'records-goto-today)
+(define-key global-map [?\C-c ?-] 'records-underline-line)
+
+; The Ctrl-x n map
+(define-key global-map [?\C-x ?n ?t] 'records-goto-today)
+(define-key global-map [?\C-x ?n ?r] 'records-insert-record-region)
+(define-key global-map [?\C-x ?n ?b] 'records-insert-record-buffer)
+
+
+; Hook up to the calendar mode
+(add-hook 'calendar-load-hook 
+	  (function
+	   (lambda ()
+	     (define-key calendar-mode-map "n" 'records-calendar-to-record))))
+
+;;;*** OPTIONAL ***;;;
+
+; If you like abbrev mode 
+;(add-hook 'records-mode-hooks
+;    (function
+;     (lambda ()
+;       (abbrev-mode 1))))
+
+; If you want to be brought to today's record on startup
+;(records-goto-today)

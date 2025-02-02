@@ -26,7 +26,7 @@
 
 ;;; Code:
 
-(defconst records-version "1.5.1"
+(defconst records-version "1.5.2"
   "Records package version.")
 
 (provide 'records-version)

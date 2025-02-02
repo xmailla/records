@@ -1,8 +1,6 @@
 ;; records.el --- records bootstrap
 ;;
-;; $Id: records.el.in,v 1.1 2003/05/20 05:05:56 dmasterson Exp $
-;;
-;; Copyright (C) 1996-2003 by Ashvin Goel
+;; Copyright (C) 1995-2000 by Ashvin Goel
 ;; Copyright (C) 2009 by Xavier Maillard <xma@gnu.org>
 ;;
 ;; Author: Ashvin Goel
