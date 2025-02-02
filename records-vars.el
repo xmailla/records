@@ -1,7 +1,7 @@
 ;;;
 ;;; records-vars.el
 ;;;
-;;; $Id: records-vars.el,v 1.8 2000/01/18 11:27:39 ashvin Exp $
+;;; $Id: records-vars.el,v 1.9 2000/01/31 21:23:09 ashvin Exp $
 ;;;
 ;;; Copyright (C) 1996 by Ashvin Goel
 ;;;
@@ -64,14 +64,15 @@ value is nil. In that case, to turn of records fontification, add
 \"records-mode\" as an element to the list called 
 font-lock-mode-disable-list.")
 
+; silence font lock in emacs (xemacs doesn't seem to have this problem)
+(defvar bold 'bold)
+
 (defvar records-mode-font-lock-keywords
   '(
-    ;; originally used to be font-lock-reference-face
-    ("^link:\\ <\\(.*\\)>$" 1 bold-italic) ; link
-    ;; next regexp obtained from records-subject-regexp
-    ;; originally used to be font-lock-keyword-face
-    ("^\\* \\(.*\\)\n\\-\\-\\-+$" . bold) ; subject
+    ;; subject face: this regexp obtained from records-subject-regexp
+    ("^\\* \\(.*\\)\n\\-\\-\\-+$" . bold)
     ("^\\(END_\\)?TODO:?" . font-lock-warning-face) ; todo
+    ("^link:\\ <\\(.*\\)>$" 1 font-lock-reference-face) ; link
     ("^TODO:\\ \\(//\\ .*$\\)" 1 font-lock-comment-face)) ; todo comment
   "* Font-lock keywords for records mode.")
 

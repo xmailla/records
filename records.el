@@ -1,7 +1,7 @@
 ;;;
 ;;; records.el
 ;;;
-;;; $Id: records.el,v 1.32 2000/01/18 11:27:39 ashvin Exp $
+;;; $Id: records.el,v 1.33 2000/01/31 21:23:09 ashvin Exp $
 ;;;
 ;;; Copyright (C) 1996 by Ashvin Goel
 ;;;
@@ -17,7 +17,7 @@
 ;;; Internal variables - users shouldn't change
 ;;; The defvar is for internal documentation.
 ;;;
-(defconst records-version "1.4.7")
+(defconst records-version "1.4.8")
 
 (defvar records-mode-menu-map nil
   "Records Menu Map. Internal variable.")
@@ -979,16 +979,10 @@ The key-bindings of this mode are:
 	    "--"
 	    ["Re-Init Records" records-initialize t]
 	    ))
-    (if running-xemacs
-	()
-      (easy-menu-define records-mode-menu-map records-mode-map "Records" 
-                        (cons "Records" records-mode-menu-map)))
+    (easy-menu-define records-mode-menu-map records-mode-map "Records" 
+                        (cons "Records" records-mode-menu-map))
     )
-  ;; This code should be run everytime a new records buffer is initialized
-  (if running-xemacs
-      (progn 
- 	(set-buffer-menubar current-menubar)
- 	(add-submenu nil (cons "Records" records-mode-menu-map))))
+  (easy-menu-add records-mode-menu-map)
 
   ;; imenu stuff 
   (if (locate-library "imenu")
@@ -1007,14 +1001,18 @@ The key-bindings of this mode are:
     (records-initialize)
     (setq records-initialize t))
   ;; fontification code by Robert Mihram
-  (if (and (not font-lock-auto-fontify) records-mode-use-font-lock)
-      (progn
-        (eval-when-compile (require 'font-lock))
-        (make-local-variable 'font-lock-keywords)
-        (setq font-lock-keywords records-mode-font-lock-keywords)
-        (font-lock-mode 1)))
+  (if (and (or (not (boundp 'font-lock-auto-fontify)) 
+               (not font-lock-auto-fontify))
+           records-mode-use-font-lock)
+      (progn (eval-when-compile (require 'font-lock))
+             (make-local-variable 'font-lock-defaults)
+             (setq font-lock-defaults '(records-mode-font-lock-keywords))
+             (font-lock-mode 1)))
   (run-hooks 'records-mode-hooks)
   )
+
+;; for xemacs
+(put 'records-mode 'font-lock-defaults '(records-mode-font-lock-keywords))
 
 (run-hooks 'records-load-hooks)
 (provide 'records)

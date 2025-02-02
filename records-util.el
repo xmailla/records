@@ -1,7 +1,7 @@
 ;;;
 ;;; records-util.el
 ;;;
-;;; $Id: records-util.el,v 1.12 2000/01/27 21:26:47 ashvin Exp $
+;;; $Id: records-util.el,v 1.13 2000/01/31 21:23:09 ashvin Exp $
 ;;;
 ;;; Copyright (C) 1996 by Ashvin Goel
 ;;;
@@ -319,7 +319,7 @@ Prompts for subject."
   "Writes the current buffer file name, url or message id
 at the end of today's record and inserts a comment."
   (interactive "scomment: ")
-  (eval-when-compile (require 'url))
+  (require 'url)
   (save-excursion
     (let ((flink 
            (cond ((not (null buffer-file-name));; 1. normal file 

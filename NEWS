@@ -1,4 +1,7 @@
-Version 1.4.7 (not yet released)
+Version 1.4.8
+        Fix fontification bugs in gnu emacs introduced in 1.4.7.
+
+Version 1.4.7
         Clicking with the middle button on a records link invokes
           records-goto-link
 
