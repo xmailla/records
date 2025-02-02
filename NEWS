@@ -1,8 +1,8 @@
 Version 1.4
         New function records-create-todo for creating new todos.
         The default values of records-todo-begin-move-regexp, 
-           records-todo-begin-copy-regexp and records-todo-end-regexp has been changed 
-           and made more sane.
+        records-todo-begin-copy-regexp and records-todo-end-regexp 
+        has been changed and made more sane.
         The info file has minor updates.
         Added the NEWS file!
 

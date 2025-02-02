@@ -1,6 +1,6 @@
-This is the first version of the records mode that I am releasing. There is
-not much documentation provided. However, most of the functionality is
-available from the RECORDS menu when you are visiting a records file.
+This is version 1.4 of records. New documentation has been provided in an 
+info file. Most of the functionality is also available from the RECORDS menu 
+when you are visiting a records file. 
 
 A brief documentation on records usage is described below.
 
@@ -14,11 +14,11 @@ software to some other emacs-related directory, now is the time to do it.
 
 2. Read ./INSTALL and follow its instructions. The install procedure makes the
 byte compiled elisp files, reads in the user settings for records (by running
-recordsadmin), and installs these settings into the records initialization file
-~/.emacs-records. This initialization file is read by emacs and the records
-administration program (recordsadmin). Install also adds the loading of
-.emacs-records into your .emacs. When you start emacs, all the records defaults
-will be automatically loaded.
+a perl administration program called recordsadmin), and installs these
+settings into the records initialization file ~/.emacs-records. This
+initialization file is read by emacs and by recordsadmin. Install also adds
+the loading of .emacs-records into your .emacs. When you start emacs, all the
+records defaults will be automatically loaded.
 
 GO AHEAD AND DO THE INSTALLATION.
 
@@ -39,7 +39,7 @@ deletes and renames records. The last section does administration tasks such as
 encryption, concatanation of records by subject or days etc. Make sure you look
 at the records TODO facility.
 
-7. Remember that if you just have one records file (today's) then records
+7. Remember that if you have just one records file (today's) then records
 traversal's are not very useful!
 
 8. The program recordsadmin has been provided in order to do meta-level things

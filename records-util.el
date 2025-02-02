@@ -1,7 +1,7 @@
 ;;;
 ;;; records-util.el
 ;;;
-;;; $Id: records-util.el,v 1.6 1999/05/28 04:48:17 ashvin Exp $
+;;; $Id: records-util.el,v 1.7 1999/11/13 23:10:34 ashvin Exp $
 ;;;
 ;;; Copyright (C) 1996 by Ashvin Goel
 ;;;
@@ -24,12 +24,13 @@
   "Insert the previous record files todo's into the date file.
 See the records-todo-.*day variables on when it is automatically invoked."
   (interactive)
-  (if (null date)
-      (setq date (records-file-to-date)))
+  (if date
+      (records-goto-record nil date "" nil t nil nil nil)
+    (setq date (records-file-to-date)))
   (save-excursion
-    (let* ((date-buf (current-buffer))
+    (let* ((new-buf (current-buffer))
 	   (prev-date (records-goto-prev-record-file 1 t t))
-	   (cur-buf (current-buffer)))
+	   (cur-buf (current-buffer))) ;; this is the prev-date buffer
       (if (null prev-date)
 	  () ;; nothing to do
 	(goto-char (point-min))
@@ -57,7 +58,7 @@ See the records-todo-.*day variables on when it is automatically invoked."
 				   records-todo-move-regions)))
 	      ;; now copy the region to the new file
 	      (save-excursion
-		(set-buffer date-buf)
+		(set-buffer new-buf)
 		(goto-char (point-max))
 		(if (not subject-inserted)
 		    (progn (records-insert-record subject) 
@@ -65,8 +66,9 @@ See the records-todo-.*day variables on when it is automatically invoked."
 		(insert-buffer-substring cur-buf bt-point et-point)
 		;; insert an extra newline - this is useful for empty records
 		(insert "\n")))))
-	;; end of record processing. for todo-move, remove regions from old file
-	(let ((modified (buffer-modified-p)))
+	;; end of record processing. 
+        ;; for todo-move, remove regions from old file
+	(let ((prev-modified (buffer-modified-p)))
 	  (while records-todo-move-regions
 	    (goto-char (car (car records-todo-move-regions)))
 	    (apply 'delete-region (car records-todo-move-regions))
@@ -75,8 +77,11 @@ See the records-todo-.*day variables on when it is automatically invoked."
 		(records-delete-record nil t))
 	    (setq records-todo-move-regions
 		  (cdr records-todo-move-regions)))
-	  (and (not modified) (buffer-modified-p) (save-buffer)))
-	))))
+	  (if (or prev-modified (not (buffer-modified-p)))
+              () ;; don't do anything
+            (save-buffer)
+            (records-delete-empty-record-file)
+            ))))))
 
 (defun records-user-name ()
   "The user name of the records user."

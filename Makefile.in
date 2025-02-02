@@ -1,35 +1,11 @@
 ###
 ### Makefile.in
 ###
-### $Id: Makefile.in,v 1.7 1999/08/19 16:14:56 ashvin Exp $
+### $Id: Makefile.in,v 1.8 1999/11/13 22:58:17 ashvin Exp $
 ###
 ### Copyright (C) 1996 by Ashvin Goel
 ###
 ### This file is under the Gnu Public License.
-
-# $Log: Makefile.in,v $
-# Revision 1.7  1999/08/19 16:14:56  ashvin
-# Minor fixes
-#
-# Revision 1.6  1999/05/25 02:07:22  ashvin
-# Renamed encrypt to mailcrypt.
-# Added records.info file.
-#
-# Revision 1.5  1999/04/10 19:42:13  ashvin
-# Added FAQ in DISTFILES
-#
-# Revision 1.4  1999/04/10 18:36:23  ashvin
-# Minor bug fix.
-#
-# Revision 1.3  1997/05/01 21:21:13  ashvin
-# Changed names from notes to record.
-#
-# Revision 1.2  1997/01/23 00:02:35  ashvin
-# The first release
-#
-# Revision 1.1  1996/12/24  23:56:07  asgoel
-# Initial revision
-#
 
 # the Emacs binary on your system
 EMACS=@EMACS_BIN@

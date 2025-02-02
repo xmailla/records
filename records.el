@@ -1,7 +1,7 @@
 ;;;
 ;;; records.el
 ;;;
-;;; $Id: records.el,v 1.27 1999/08/01 02:36:14 ashvin Exp $
+;;; $Id: records.el,v 1.29 1999/11/13 23:16:52 ashvin Exp $
 ;;;
 ;;; Copyright (C) 1996 by Ashvin Goel
 ;;;
@@ -16,7 +16,7 @@
 ;;; Internal variables - users shouldn't change
 ;;; The defvar is for internal documentation.
 ;;;
-(defconst records-version "1.4.3")
+(defconst records-version "1.4.4")
 
 (defvar records-mode-menu-map nil
   "Records Menu Map. Internal variable.")
@@ -193,6 +193,21 @@ returns new normalized date."
     ;; return new date
     new-ndate))
 
+(defun records-sane-date (date &optional no-err)
+  "Tests if date is sane. Returns date if so or else error. 
+If no-err is set, returns nil if date is bogus."
+  (if (not (= (length date) records-date-length))
+      (if no-err nil
+        (error (format "records-sane-date: %s: bad date" date)))
+    ;; else
+    (let ((i 0) (ret date))
+      (while (< i records-date-length)
+        (if (or (< (string-to-char (substring date i)) ?0)
+                (> (string-to-char (substring date i)) ?9))
+            (if no-err (setq ret nil)
+              (error (format "records-sane-date: %s: bad date" date))))
+        (setq i (+ i 1))) ret)))
+
 (defun records-file-to-date (&optional file-name)
   "Get the date associated with file-name.
 If file-name is not specified, the current buffers file-name is used."
@@ -203,9 +218,8 @@ If file-name is not specified, the current buffers file-name is used."
 	  (error "records-file-to-date: buffer has no associated file."))
       (setq file-name (file-name-nondirectory buffer-file-name)))
     ;; check that length of file name is meaningful
-    (if (= (length file-name) records-date-length)
-	file-name
-      (error (concat "records-file-to-date: bad file-name: " file-name))))
+    (records-sane-date file-name)
+    file-name)
 
 (defun records-denormalize-date (ndate)
   "Get the file name associated with  date.
@@ -226,7 +240,8 @@ The ndate is normalized and in (day month year) format."
 		(len (nth 2 x)))
 	    (setq date (concat 
 			(substring date 0 start)
-			(format (concat "%0" (int-to-string len) "d") (nth i ndate))
+			(format (concat "%0" (int-to-string len) "d") 
+                                (nth i ndate))
 			(substring date (+ start len))))
 	    (setq i (1+ i))))
        records-date))
@@ -234,6 +249,7 @@ The ndate is normalized and in (day month year) format."
 
 (defun records-normalize-date (date)
   "Returns date in (day month year) format with year in four digits"
+  (records-sane-date date)
   (let ((ndate '(0 0 0))
 	(i 0))
     (mapcar
@@ -272,12 +288,25 @@ With absolute set, get the absolute path."
          (error "records-directory-path: bad records-directory-structure value"))))
 
 (defun records-read-subject (&optional subject)
-  "Read the records subject to be inserted from the minibuffer.
+  "Read the records subject from minibuffer.
 Completion is possible."
   (interactive
    (progn (records-index-buffer); initializes records-subject-table if required
 	  (list (completing-read "Records subject: " records-subject-table))))
   subject)
+
+(defun records-read-date ()
+  "Reads the records date from minibuffer.
+Ensure date is reasonable."
+  (interactive)
+  (let ((date (read-from-minibuffer "Records date: "
+                                    (cons (records-file-to-date) 0))))
+    (while (not (records-sane-date date t)) ; check for date sanity
+      (message (format "%s: bad date" date))
+      (sleep-for 1)
+      (setq date (read-from-minibuffer "Records date: "
+                                       (cons (records-file-to-date) 0))))
+    date))
 
 (defun records-add-text-properties (beg end)
   "Fontify a records region, make read-only etc.
@@ -660,9 +689,10 @@ See also records-goto-next-record-file."
 (defun records-goto-today ()
   "Go to the records file of today."
   (interactive)
-    (records-goto-record nil (records-todays-date) "" nil nil records-todo-today))
+    (records-goto-record nil (records-todays-date) "" nil nil
+                         records-todo-today))
 
-(defun records-goto-relative-record-file(&optional arg no-switch no-error)
+(defun records-goto-relative-record-file (&optional arg no-switch no-error)
   "With positive arg, go arg files ahead of current records file. 
 With negative arg, go arg files behind of current records file.
 Returns the new date."
@@ -752,11 +782,12 @@ Identical record files are not put in the history consecutively."
   (let* ((subject (if subject
 		      subject (call-interactively 'records-read-subject)))
 	 (date (records-file-to-date))
-	 (tag ""))
-    ;; we don't currently allow a record insertion 
-    ;; if another record with the same subject exists below this record.
+	 (tag "")
+         (prev-modified (buffer-modified-p)))
+    ;; currently, we don't allow a record insertion if another record with 
+    ;; the same subject exists below this record.
     (save-excursion
-      (if (records-goto-down-record subject)
+      (if (records-goto-down-record subject t)
 	  (error 
 	   (concat "records-insert-record: can't insert out-of-order record: "
 		   subject))))
@@ -775,7 +806,19 @@ Identical record files are not put in the history consecutively."
     (records-dindex-insert-record date)
 
     ;; now make the record body
-    (records-make-record subject date tag record-body)))
+    (records-make-record subject date tag record-body)
+    (if (not prev-modified)
+        (save-buffer))
+    ))
+
+(defun records-delete-empty-record-file ()
+  "Delete current buffer and its associated file if the buffer is empty 
+and not modified."
+  (if (and (not (buffer-modified-p)) (eq (buffer-size) 0))
+      (let* ((bname (buffer-name))
+             (dir-name (records-directory-path bname t)))
+        (kill-buffer nil)
+        (delete-file (concat dir-name "/" bname)))))
 
 (defun records-delete-record (&optional keep-body no-prompt)
   "Delete the current record for the current date.
@@ -784,17 +827,23 @@ With arg, removes the subject only."
   (let* ((date (records-file-to-date))
 	 (subject-tag (records-subject-tag t))
 	 (subject (nth 0 subject-tag))
-	 (tag (nth 1 subject-tag)))
+	 (tag (nth 1 subject-tag))
+         (prev-modified (buffer-modified-p)))
     
     (if (if no-prompt     ;; prompt?
 	    t (y-or-n-p (concat "Delete record: " subject " ")))
 	(progn
 	  ;; remove the record subject and optionally the body
 	  (records-free-record keep-body)
+          (if (not prev-modified)
+              (save-buffer))
 	  ;; remove the date from the date-index
 	  (records-dindex-delete-record date)
 	  ;; remove the records index entry
-	  (records-index-delete-record subject date tag)))
+	  (records-index-delete-record subject date tag)
+          ;; remove empty record and file
+          (records-delete-empty-record-file)
+          ))
     ))
 	
 (defun records-rename-record ()
@@ -802,6 +851,23 @@ With arg, removes the subject only."
   (interactive)
   (records-delete-record 'keep-body)
   (records-insert-record))
+
+(defun records-move-record (&optional date)
+  "Move the current record to date. Prompts for date."
+  (interactive)
+  (if (null date)
+      (setq date (records-read-date))
+    (records-sane-date date))
+  (let* ((subject-tag (records-subject-tag t))
+         (subject (nth 0 subject-tag))
+         (point-pair (records-record-region t))
+         (record-body 
+          (buffer-substring (first point-pair) (second point-pair))))
+    (save-excursion
+      (records-goto-record nil date "" nil t nil)
+      (goto-char (point-max))
+      (records-insert-record subject record-body)))
+  (records-delete-record nil t))
 
 (define-derived-mode records-mode text-mode "Records"
   "Enable records-mode for a buffer. Currently, the documentation of this 
@@ -818,6 +884,7 @@ The key-bindings of this mode are:
   (define-key records-mode-map "\C-c\C-i" 'records-insert-record)
   (define-key records-mode-map "\C-c\C-d" 'records-delete-record)
   (define-key records-mode-map "\C-c\C-r" 'records-rename-record)
+  (define-key records-mode-map "\C-c\C-m" 'records-move-record)
 
   (define-key records-mode-map "\M-\C-a" 'records-goto-up-record)
   (define-key records-mode-map "\M-\C-e" 'records-goto-down-record)
@@ -878,6 +945,7 @@ The key-bindings of this mode are:
 	    ["Insert Record" records-insert-record t]
 	    ["Delete Record" records-delete-record t]
 	    ["Rename Record" records-rename-record t]
+	    ["Move Record" records-move-record t]
 	    "--"
 	    ["Create TODO" records-create-todo t]
 	    ["Get TODO's" records-get-todo t]
