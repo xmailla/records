@@ -1,0 +1,18 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(records.el)
+
+AC_CHECK_PROGS(EMACS_BIN, emacs xemacs)
+
+AC_PATH_PROGS(PERL, perl perl5)
+
+AC_PROG_INSTALL()
+
+lispdir='${datadir}/emacs/site-lisp'
+
+AC_SUBST(lispdir)
+
+srcdirpath=`pwd`
+
+AC_SUBST(srcdirpath)
+
+AC_OUTPUT(Makefile recordsadmin, chmod +x recordsadmin)

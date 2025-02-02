@@ -1,0 +1,51 @@
+FAQ
+---
+
+1. Can I change the location of .emacs-records?
+2. Can I have spaces in the subject title?
+
+
+--------------------------------------------------------------------------
+1. The package installs .emacs-records in my home directory. I somehow dont 
+like the idea of cluttering my home directory. I was wondering if it was 
+possible to move this file to my records directory. Can I do it after I 
+install it and change the corresponding lines in recordsadmin or do I have to 
+install it again? If I have to install it again, which files do I have to 
+change for this to take effect?
+
+This is a bootstraping problem. Since recordsadmin creates this file the first
+time and then uses this file everytime you invoke it, I assumed a fixed place
+for it. Otherwise I would have to store the location of this file in some
+known place. I could use configure to ask the user to specify an area, but
+then what is the appropriate default? Making the default be inside the records
+directory requires some work because the records directory variable itself is
+customizable.
+
+The way you can move .emacs-records to ~/records is the following:
+  a) Set the following variable in recordsadmin
+  # global - should be set by makefile
+  $records_init_file="$ENV{HOME}/records/.emacs-records";
+
+  b) In .emacs
+  (load "~/records/.emacs-records")
+  (setq records-init-file (concat (getenv "HOME") "/records/.emacs-records"))
+
+2. When I insert a new record using C-c C-i or the menu, and type in the
+subject (or title) of the record, emacs does completion. And completion does 
+not allow for space in the record title. So I am forced to have either single 
+word titles or words-separated-by-hyphens or something similar titles. Is this 
+a feature or a bug? I dont mind having to type to hyphens or underscores, but 
+it would help to have spaces.
+
+You can have space in titles. The way you do it is to type C-q before typing
+in the space. That puts the literal space character in emacs. So for example
+you would type
+
+C-cC-iSpaceC-qTest
+
+and that would generate
+
+* Space Test
+------------
+link: <../../99/04/040999#* Space Test>
+

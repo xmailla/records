@@ -1,0 +1,58 @@
+This is the first version of the records mode that I am releasing. There is
+not much documentation provided. However, most of the functionality is
+available from the RECORDS menu when you are visiting a records file.
+
+A brief documentation on records usage is described below.
+
+Steps:
+
+1. Since you are reading this file, you have untarred the gzip'ed file. The
+elisp files in the current directory (in which you are right now) will not be
+installed in any other directory, and installation will automatically add the
+current directory to the load path in emacs. So if you wish to move the records
+software to some other emacs-related directory, now is the time to do it.
+
+2. Read ./INSTALL and follow its instructions. The install procedure makes the
+byte compiled elisp files, reads in the user settings for records (by running
+recordsadmin), and installs these settings into the records initialization file
+~/.emacs-records. This initialization file is read by emacs and the records
+administration program (recordsadmin). Install also adds the loading of
+.emacs-records into your .emacs. When you start emacs, all the records defaults
+will be automatically loaded.
+
+GO AHEAD AND DO THE INSTALLATION.
+
+3. Type key "Ctrl-c n" (for records-goto-today). This will get you today's
+records file. If you are starting fresh, it will be empty. 
+
+4. To insert a records subject type "Ctrl-c Ctrl-i" or look for "Insert Record"
+in the menu. Once you have added a subject, you can start typing ...
+Regarding spaces in subject titles, look at the FAQ.
+
+5. Multiple subjects can be added in each day's records file. Infact the same
+subject can be added multiple times in each day's records file.
+
+6. For all the other functionality, look at the records menu. The menu has been
+divided so that most of the functionality at the top of the menu is related to
+records traversal (up, down, prev, next, goto etc). The middle section adds,
+deletes and renames records. The last section does administration tasks such as
+encryption, concatanation of records by subject or days etc. Make sure you look
+at the records TODO facility.
+
+7. Remember that if you just have one records file (today's) then records
+traversal's are not very useful!
+
+8. The program recordsadmin has been provided in order to do meta-level things
+- initialize (or reinitialize) your records software, change date format,
+change directory structure and recreate records indexes if they are broken (for
+example if your system crashes while emacs is updating your indexes on the
+fly). You should not need to use it in normal records use.
+
+9. Tell me if you like the package, have improvements to suggest, or have
+found bugs.
+
+Good Luck.
+
+Ashvin Goel (ashvin@cse.ogi.edu)
+
+
