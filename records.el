@@ -1,7 +1,7 @@
 ;;;
 ;;; records.el
 ;;;
-;;; $Id: records.el,v 1.29 1999/11/13 23:16:52 ashvin Exp $
+;;; $Id: records.el,v 1.30 1999/11/23 19:51:18 ashvin Exp $
 ;;;
 ;;; Copyright (C) 1996 by Ashvin Goel
 ;;;
@@ -16,7 +16,7 @@
 ;;; Internal variables - users shouldn't change
 ;;; The defvar is for internal documentation.
 ;;;
-(defconst records-version "1.4.4")
+(defconst records-version "1.4.5")
 
 (defvar records-mode-menu-map nil
   "Records Menu Map. Internal variable.")

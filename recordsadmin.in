@@ -2,7 +2,7 @@
 
 ### recordsadmin.in
 ###
-### $Id: recordsadmin.in 1.1 Sat, 15 May 1999 18:36:38 -0700 ashvin $
+### $Id: recordsadmin.in,v 1.12 1999/11/23 19:51:18 ashvin Exp $
 ###
 ### Copyright (C) 1996 by Ashvin Goel
 ###
@@ -81,7 +81,6 @@ $records_init_mesg = ";;; AUTOMATICALLY GENERATED: DO NOT ALTER OR DELETE FROM T
 
 $records_more_init_mesg = <<MORE_MESG
 
-;;; This part of the file is also read by perl.
 ;;; Add any emacs customization before this comment.
 
 (let ((f (expand-file-name "@srcdirpath@")))
@@ -97,6 +96,7 @@ $records_more_init_mesg = <<MORE_MESG
       (cons (cons "[0-9][0-9][0-9][0-9][0-9][0-9].?.?\$" 'records-mode)
 	    auto-mode-alist))
 
+;;; The following part of the file is also read by perl.
 MORE_MESG
 ;
 
@@ -731,6 +731,8 @@ $0 -c\n\n";
 	print "Do you still want to re-initialize your init file (y or n) ";
 	chop($val= <>);
 	if ($val eq "n") {
+            # write out the init file
+            &records_write_init_file($init);
 	    return;
 	}
     }

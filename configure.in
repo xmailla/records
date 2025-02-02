@@ -1,7 +1,10 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(records.el)
 
-AC_CHECK_PROGS(EMACS_BIN, emacs xemacs)
+AC_ARG_ENABLE(xemacs,
+[  --enable-xemacs        Use xemacs for compilation],
+[AC_CHECK_PROGS(EMACS_BIN, xemacs)],
+[AC_CHECK_PROGS(EMACS_BIN, emacs)])
 
 AC_PATH_PROGS(PERL, perl perl5)
 

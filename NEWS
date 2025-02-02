@@ -1,3 +1,23 @@
+Version 1.4.5
+        configure now takes an argument so that xemacs can be specified
+          for byte compiling the elisp files.
+        recordsadmin now updates the load path in ~/.emacs-records even 
+          when the user specifies that the init file variables should not be
+          updated. This is needed otherwise the load path becomes inconsistent 
+          with the new installation. The init file variables are ofcourse not
+          updated.
+
+Version 1.4.4
+        Fixed small bugs in TODO processing
+        Files are saved after TODO processing, records insertion and 
+          deletion if they were not modified previously.
+        Empty record files are deleted after TODO processing and 
+          deletion of records.
+        Added records-move-record that will allow moving a record to 
+          another date. 
+        Added records-insert-file-link for inserting the current file
+          as a link into today's record file.
+
 Version 1.4
         New function records-create-todo for creating new todos.
         The default values of records-todo-begin-move-regexp, 

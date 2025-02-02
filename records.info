@@ -90,9 +90,12 @@ will be automatically loaded.
      load path in emacs. So if you wish to move the records software to
      some other emacs-related directory, now is the time to do it.
 
-  2. Run `./configure'
+  2. Run `./configure' or `./configure --enable-xemacs'
 
-     This program is provided in the source directory (do not run your
+     The `--enable-xemacs' flag ensures that the elisp files are
+     compiled using `xemacs'. Use this option if you use `xemacs'.
+
+     The configure is provided in the source directory (do not run your
      own configure).  If you want to specify the directory in which
      `recordsadmin' (a Perl script) should be installed, you should run
 
@@ -151,7 +154,7 @@ will be automatically loaded.
      (define-key global-map [?\C-x ?n ?t] 'records-goto-today)
      (define-key global-map [?\C-x ?n ?r] 'records-insert-record-region)
      (define-key global-map [?\C-x ?n ?b] 'records-insert-record-buffer)
-     
+     (define-key global-map [?\C-x ?n ?f] 'records-insert-file-link)
      
      ; Hook up to the calendar mode
      (add-hook 'calendar-load-hook
@@ -395,11 +398,16 @@ Adding, Deleting and Renaming Records
      Key `C-c C-d'. Delete the current record for the current date.
      With argument, removes the subject only, so the body is preserved.
      If this is the last record on a subject, the user is asked if the
-     subject should be removed from the index file.
+     subject should be removed from the index file. If the deletion of
+     this record makes the file empty, the records file is deleted.
 
 `records-rename-record'
      Key `C-c C-r'. Renames the subject of the current record for the
      current date.
+
+`records-move-record'
+     Key `C-c C-m'. Moves the current record to another date. It prompts
+     for the new date.
 
 
 File: records.info,  Node: Misc Commands,  Next: Records Administration,  Prev: Manipulating Records,  Up: Basic Use
@@ -426,6 +434,21 @@ Miscellaneous Commands
      Key `C-c return'. Underline the current line to the length of the
      line. This function is not really specific to records. You can use
      it to underline any text.
+
+`records-insert-record-region'
+     Key `C-x n r' Insert the region in the current buffer into today's
+     record. Prompts for subject.
+
+`records-insert-record-buffer'
+     Key `C-x n b' Insert the current buffer into today's record.
+     Prompts for subject.
+
+`records-insert-file-link'
+     Key `C-x n f' Write the current buffer file name as a records link
+     at the end of today's record and inserts a user-specified comment.
+     This function can be used to bookmark files in your records file.
+     Currently, this function is not bound to any key. You should bind
+     it to a global key.
 
 
 File: records.info,  Node: Records Administration,  Prev: Misc Commands,  Up: Basic Use
@@ -718,9 +741,13 @@ Concept and Function Index
 * records-goto-prev-record-file:         Record Traversal.
 * records-goto-today:                    Record Traversal.
 * records-goto-up-record:                Record Traversal.
+* records-insert-file-link:              Misc Commands.
 * records-insert-record:                 Manipulating Records.
+* records-insert-record-buffer:          Misc Commands.
+* records-insert-record-region:          Misc Commands.
 * records-link-as-kill:                  Misc Commands.
 * records-mark-record:                   Misc Commands.
+* records-move-record:                   Manipulating Records.
 * records-rename-record:                 Manipulating Records.
 * records-underline-line:                Misc Commands.
 * TODO:                                  Organizing your TODOs.
@@ -749,6 +776,7 @@ Key Index
 * C-c C-j:                               Records Index File.
 * C-c C-k:                               Misc Commands.
 * C-c C-l:                               Record Traversal.
+* C-c C-m:                               Manipulating Records.
 * C-c C-n:                               Record Traversal.
 * C-c C-p:                               Record Traversal.
 * C-c C-r:                               Manipulating Records.
@@ -766,22 +794,22 @@ Tag Table:
 Node: Top1189
 Node: Location2350
 Node: Installation2574
-Node: Tutorial7555
-Node: Basic Use9611
-Node: What is a Record10206
-Node: Record File11429
-Node: Record Traversal11783
-Node: Records Index File14894
-Node: Manipulating Records15743
-Node: Misc Commands16580
-Node: Records Administration17564
-Node: Advanced Use18577
-Node: Organizing your TODOs18959
-Node: Security21801
-Node: Concatenating Records23308
-Node: Conclusion25854
-Node: Variable Index27188
-Node: Concept Index28398
-Node: Key Index30311
+Node: Tutorial7785
+Node: Basic Use9841
+Node: What is a Record10436
+Node: Record File11659
+Node: Record Traversal12013
+Node: Records Index File15124
+Node: Manipulating Records15973
+Node: Misc Commands17016
+Node: Records Administration18601
+Node: Advanced Use19614
+Node: Organizing your TODOs19996
+Node: Security22838
+Node: Concatenating Records24345
+Node: Conclusion26891
+Node: Variable Index28225
+Node: Concept Index29435
+Node: Key Index31579
 
 End Tag Table

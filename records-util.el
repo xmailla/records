@@ -1,7 +1,7 @@
 ;;;
 ;;; records-util.el
 ;;;
-;;; $Id: records-util.el,v 1.7 1999/11/13 23:10:34 ashvin Exp $
+;;; $Id: records-util.el,v 1.8 1999/11/23 06:22:24 ashvin Exp $
 ;;;
 ;;; Copyright (C) 1996 by Ashvin Goel
 ;;;
@@ -298,5 +298,26 @@ Prompts for subject."
 Prompts for subject."
   (interactive)
   (records-insert-record-region (point-min) (point-max)))
+
+;; bind the following to some simple key
+;; From Jody Klymak (jklymak@apl.washington.edu)
+(defun records-insert-file-link (&optional comment-string)
+"Writes the current buffer file name at the end of today's record
+and inserts a comment."
+  (interactive "scomment: ")
+  (save-excursion
+    (let ((fname buffer-file-name))
+      (if (null fname)
+          (error "Buffer is not associated with any file"))
+      (message "%s" fname)
+       ;;; now we need to visit the buffer records-goto-today
+      (if (one-window-p t) 
+          (split-window))
+      (other-window 1)
+      (records-goto-today)
+      (goto-char (point-max))
+      (insert "link: <" fname ">\n")
+      (insert "" comment-string "\n")
+      (other-window -1))))
 
 (provide 'records-util)
