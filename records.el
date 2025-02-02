@@ -1,7 +1,7 @@
 ;;;
 ;;; records.el
 ;;;
-;;; $Id: records.el,v 1.30 1999/11/23 19:51:18 ashvin Exp ashvin $
+;;; $Id: records.el,v 1.32 2000/01/18 11:27:39 ashvin Exp $
 ;;;
 ;;; Copyright (C) 1996 by Ashvin Goel
 ;;;
@@ -17,7 +17,7 @@
 ;;; Internal variables - users shouldn't change
 ;;; The defvar is for internal documentation.
 ;;;
-(defconst records-version "1.4.6")
+(defconst records-version "1.4.7")
 
 (defvar records-mode-menu-map nil
   "Records Menu Map. Internal variable.")
@@ -310,24 +310,23 @@ Ensure date is reasonable."
     date))
 
 (defun records-add-text-properties (beg end)
-  "Fontify a records region, make read-only etc.
-Look at variables records-fontify and records-subject-read-only.  
-This function is currently only invoked for a records subject.  
+  "Make a region read-only, etc.
+Look at variable records-subject-read-only.
+This function is currently only invoked for a records subject.
 
 Although the region is read-only, it is possible to edit at the beginning of
 the subject. This can mess up a records subject if anything but a newline is
 inserted. We could close the beginning of the region (see start-close), but
 then users would not be able to add newlines before a subject, and it screws up
-records-encrypt-record and records-decrypt-record. What we need is that 
+records-encrypt-record and records-decrypt-record. What we need is that
 insertion of any character automatically inserts a newline also. TODO"
-  (if records-fontify
-      (progn
-        (if (not running-xemacs)
-            ;; emacs has an of-by-one error
-            (setq end (1- end)))
-        (add-text-properties beg end '(face bold start-open t))
-        (if records-subject-read-only
-            (add-text-properties beg end '(read-only records-subject))))))
+  (progn
+    (if (not running-xemacs)
+        ;; emacs has an of-by-one error
+        (setq end (1- end)))
+    (add-text-properties beg end '(start-open t))
+    (if records-subject-read-only
+        (add-text-properties beg end '(read-only records-subject)))))
 
 (defun records-remove-text-properties (s) 
   "Remove the text properties of string in a record.
@@ -499,8 +498,10 @@ With arg., keep the body and remove the subject only."
       (insert "\n" (buffer-substring bol bospaces))
       (insert-char ?- (- eol bospaces)))))
 
-;; Thanks to Kaarthik Sivakumar, 04/13/99 for the http, ftp, mailto 
-;; and gopher handling code
+;; 04/13/1999: http, ftp, mailto and gopher handling code
+;;             Thanks to Kaarthik Sivakumar
+;; 01/10/2000: dejanews handling code
+;;             Thanks to Robert Mihram 
 (defun records-goto-link ()
   "Goto the link around point in the records file.
 A link can be any of the following. They must be enclosed in <>.
@@ -512,6 +513,7 @@ A tag is a number.
 5. http:// or mailto:// or ftp:// gopher://  
    The last case is handled by browse-url-browser-function. 
    Refer to Options/\"Open URL with\" in XEmacs. 
+6. <message-id> fetch a article using deja.com.
    Spaces and other funky characters in the url can break this code."
   (interactive)
   (save-excursion
@@ -545,14 +547,25 @@ A tag is a number.
      ((looking-at "<\\(\\(http\\|mailto\\|ftp\\|gopher\\):[^>]+\\)>")
       (funcall browse-url-browser-function 
                (buffer-substring-no-properties (match-beginning 1) 
-                                               (match-end 1))))
+					       (match-end 1))))
+     ((looking-at "<\\([^ \t\n>]+\\)>")
+      (funcall browse-url-browser-function 
+	       (concat
+		"http://search.dejanews.com/msgid.xp?MID=%3C"
+		(buffer-substring-no-properties (match-beginning 1) 
+						(match-end 1))
+		"%3E&format=threaded")))
      (t (error "records-goto-link: invalid link under point.")))))
 
 (defun records-goto-mouse-link (e)
-  "Goto the link where mouse is clicked."
+  "When mouse is clicked on a link, goto the link. 
+When mouse is clicked anywhere else, invoke the default mouse binding."
   (interactive "e")
-  (mouse-set-point e)
-  (records-goto-link))
+  (condition-case nil
+      (progn (mouse-set-point e)
+             (records-goto-link))
+    (error (funcall (global-key-binding [(button2)]) e)))
+  )
 
 (defun records-goto-record (subject date tag 
 				&optional no-hist no-switch todo no-error dir)
@@ -907,7 +920,7 @@ The key-bindings of this mode are:
   (define-key records-mode-map "\C-c\C-s" 'records-search-forward)
   (define-key records-mode-map "\C-c\C-r" 'records-search-backward)
 
-  ;; (define-key records-mode-map [M-S-mouse-1] 'records-goto-mouse-link)
+  (define-key records-mode-map [(button2)] 'records-goto-mouse-link)
 
   ;; utility functions have C-c/ prefix keys
   (define-key records-mode-map "\C-c/t" 'records-create-todo)
@@ -980,7 +993,7 @@ The key-bindings of this mode are:
   ;; imenu stuff 
   (if (locate-library "imenu")
       (progn
-	(require 'imenu)
+	(eval-when-compile (require 'imenu))
 	(make-variable-buffer-local 'imenu-prev-index-position-function)
 	(make-variable-buffer-local 'imenu-extract-index-name-function)
 	(setq imenu-prev-index-position-function 'records-goto-up-record)
@@ -993,6 +1006,13 @@ The key-bindings of this mode are:
       ()
     (records-initialize)
     (setq records-initialize t))
+  ;; fontification code by Robert Mihram
+  (if (and (not font-lock-auto-fontify) records-mode-use-font-lock)
+      (progn
+        (eval-when-compile (require 'font-lock))
+        (make-local-variable 'font-lock-keywords)
+        (setq font-lock-keywords records-mode-font-lock-keywords)
+        (font-lock-mode 1)))
   (run-hooks 'records-mode-hooks)
   )
 

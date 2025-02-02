@@ -1,7 +1,7 @@
 ;;;
 ;;; records-util.el
 ;;;
-;;; $Id: records-util.el,v 1.8 1999/11/23 06:22:24 ashvin Exp ashvin $
+;;; $Id: records-util.el,v 1.12 2000/01/27 21:26:47 ashvin Exp $
 ;;;
 ;;; Copyright (C) 1996 by Ashvin Goel
 ;;;
@@ -15,7 +15,8 @@
   (if (not (bolp))
       (insert "\n"))
   (let (cur-point)
-    (insert records-todo-begin-move-regexp "// created on " (records-todays-date) "\n")
+    (insert records-todo-begin-move-regexp "// created on " 
+            (records-todays-date) "\n")
     (setq cur-point (point))
     (insert "\n" records-todo-end-regexp)
     (goto-char cur-point)))
@@ -48,7 +49,8 @@ See the records-todo-.*day variables on when it is automatically invoked."
 	      (setq bt-point (match-beginning 0))
 	      (setq move (match-beginning 2))
 	      ;; goto end of todo
-	      (if (re-search-forward (concat "^" records-todo-end-regexp ".*\n") 
+	      (if (re-search-forward 
+                   (concat "^" records-todo-end-regexp ".*\n") 
                                      eon-point 'end)
 		  (setq et-point (match-end 0))
 		(setq et-point (point)))
@@ -83,22 +85,25 @@ See the records-todo-.*day variables on when it is automatically invoked."
             (records-delete-empty-record-file)
             ))))))
 
+(autoload 'mc-encrypt-generic "mc-toplev" nil t)
+
 (defun records-user-name ()
   "The user name of the records user."
-  (eval-when-compile (load "mc-pgp"))
-  (cond ((boundp 'mc-ripem-user-id)
-	 mc-ripem-user-id)
-	((boundp 'mc-pgp-user-id)
-	 mc-pgp-user-id)
-	(t (user-full-name))))
+  (if (not (boundp 'mc-default-scheme))
+      (eval-when-compile (require 'mailcrypt)))
+  (let ((user (cdr (assoc 'user-id (funcall mc-default-scheme)))))
+    (cond ((boundp 'mc-ripem-user-id)
+           mc-ripem-user-id)
+          ((not (null user)) user)
+          (t (user-full-name)))))
 
 (defun records-encrypt-record (arg)
   "Encrypt the current record for the current user.
 With prefix arg, start the encryption from point to the end of record.
-Records encryption requires the mailcrypt and mc-pgp packages."
+Records encryption requires the mailcrypt and mc-pgp (or mc-pgp5) packages."
   (interactive "P")
-  (if (not (fboundp 'mc-pgp-encrypt-region))
-      (load "mc-pgp"))
+  (if (not (boundp 'mc-default-scheme))
+      (eval-when-compile (require 'mailcrypt)))
   (save-excursion
     (let ((point-pair (records-record-region t))
           start end)
@@ -107,28 +112,35 @@ Records encryption requires the mailcrypt and mc-pgp packages."
       (setq end (second point-pair))
       (goto-char start)
       ;; sanity check
-      (if (or (looking-at mc-pgp-msg-begin-line)
-	      (looking-at mc-pgp-signed-begin-line))
+      (if (or (looking-at 
+               (cdr (assoc 'msg-begin-line (funcall mc-default-scheme))))
+	      (looking-at 
+               (cdr (assoc 'signed-begin-line (funcall mc-default-scheme)))))
 	  (error "records-encrypt-record: record is already encrypted."))
-      (mc-pgp-encrypt-region (list (records-user-name)) 
-                             start end (records-user-name) nil))))
+      (mc-encrypt-generic (records-user-name) nil 
+                          start end (records-user-name) nil)
+      )))
 
 (defun records-decrypt-record ()
   "Decrypt the current record.
-Records decryption requires the mailcrypt and mc-pgp packages."
+Records decryption requires the mailcrypt and mc-pgp (or mc-pgp5) packages."
   (interactive)
-  (if (not (fboundp 'mc-pgp-decrypt-region))
-      (load "mc-pgp"))
+  (if (not (boundp 'mc-default-scheme))
+      (eval-when-compile (require 'mailcrypt)))
   (save-excursion
     (let ((point-pair (records-record-region t)))
       (goto-char (first point-pair))
       (if (not (re-search-forward
-                (concat "\\(" mc-pgp-msg-begin-line "\\|" 
-                        mc-pgp-signed-begin-line "\\)") (mark) t))
+                (concat "\\(" 
+                        (cdr (assoc 'msg-begin-line
+                                    (funcall mc-default-scheme)))
+                        "\\|" 
+                        (cdr (assoc 'signed-begin-line
+                                    (funcall mc-default-scheme)))
+                        "\\)") (mark) t))
           (error "records-decrypt-record: record is not encrypted."))
-      (mc-pgp-decrypt-region (match-beginning 0) 
-                             (second point-pair)
-                             ))))
+      (funcall (cdr (assoc 'decryption-func (funcall mc-default-scheme)))
+               (match-beginning 0) (second point-pair)))))
 
 (defun records-concatenate-records (num)
   "Concatenate the current record with the records on the same subject written
@@ -189,10 +201,11 @@ will output all the past records on the subject!!"
       (display-buffer (get-buffer records-output-buffer)))))
     
 (defun records-concatenate-record-files (num)
-  "Concatenate all the records in the records files of the last NUM days.
-All the records of a subject are collected together. Output these records in the
+  "Concatenate all the records in the records files of the last NUM days. All
+the records of a subject are collected together. Output these records in the
 records output buffer (see records-output-buffer). Without prefix arg, prompts
-for number of days. An empty string will output the records of the current file."
+for number of days. An empty string will output the records of the current
+file."
   (interactive
    (list
     (if current-prefix-arg (int-to-string current-prefix-arg)
@@ -299,23 +312,39 @@ Prompts for subject."
   (records-insert-record-region (point-min) (point-max)))
 
 ;; bind the following to some simple key
-;; From Jody Klymak (jklymak@apl.washington.edu)
-(defun records-insert-file-link (&optional comment-string)
-"Writes the current buffer file name at the end of today's record
-and inserts a comment."
+;;      From Jody Klymak (jklymak@apl.washington.edu)
+;; 01/10/2000 Support for url and gnus message id 
+;;      From Rob Mihram 
+(defun records-insert-link (&optional comment-string)
+  "Writes the current buffer file name, url or message id
+at the end of today's record and inserts a comment."
   (interactive "scomment: ")
+  (eval-when-compile (require 'url))
   (save-excursion
-    (let ((fname buffer-file-name))
-      (if (null fname)
-          (error "Buffer is not associated with any file"))
-      (message "%s" fname)
+    (let ((flink 
+           (cond ((not (null buffer-file-name));; 1. normal file 
+                  buffer-file-name)
+                 ((not (null url-current-object));; 2. url page
+                  (concat (aref url-current-object 0) "://" 
+                          (aref url-current-object 3)
+                          (aref url-current-object 5)))
+                 ((eq major-mode 'gnus-summary-mode);; 3. gnus page
+                  (progn
+                    ;; silence byte compilation
+                    (eval-when-compile (require 'mail-utils))
+                    (eval-when-compile (require 'gnus))
+                    (defvar gnus-current-headers)
+                    (mail-strip-quoted-names 
+                     (mail-header-message-id gnus-current-headers))))
+                 (t (error "Couldn't create link.")))))
+      (message "%s" flink)
        ;;; now we need to visit the buffer records-goto-today
       (if (one-window-p t) 
-          (split-window))
+	  (split-window))
       (other-window 1)
       (records-goto-today)
       (goto-char (point-max))
-      (insert "link: <" fname ">\n")
+      (insert "link: <" flink ">\n")
       (insert "" comment-string "\n")
       (other-window -1))))
 

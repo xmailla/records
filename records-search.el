@@ -1,7 +1,7 @@
 ;;
 ;;; records-extra.el
 ;;; 
-;;; $Id: records-search.el,v 1.1 1999/12/22 21:54:07 ashvin Exp ashvin $
+;;; $Id: records-search.el,v 1.1 1999/12/22 21:54:07 ashvin Exp $
 ;;;
 ;;; Copyright (C) 1999 by Kaarthik Sivakumar
 ;;;

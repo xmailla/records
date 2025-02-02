@@ -1,7 +1,7 @@
 ;;;
 ;;; records-index.el
 ;;;
-;;; $Id: records-index.el,v 1.12 1999/04/14 17:16:51 ashvin Exp $
+;;; $Id: records-index.el,v 1.13 2000/01/18 11:27:39 ashvin Exp $
 ;;;
 ;;; Copyright (C) 1996 by Ashvin Goel
 ;;;
@@ -11,7 +11,7 @@
   "* Enable records index fontification.")
 
 (defvar records-index-font-lock-keywords
-  '(("^\\(.*\\): " 1 records-bold-face))
+  '(("^\\(.*\\): " 1 bold))
   "* Font-lock keywords for records index mode.")
 
 (defvar records-index-buffer nil

@@ -1,7 +1,7 @@
 ###
 ### Makefile.in
 ###
-### $Id: Makefile.in,v 1.8 1999/11/13 22:58:17 ashvin Exp ashvin $
+### $Id: Makefile.in,v 1.10 2000/01/27 20:55:07 ashvin Exp $
 ###
 ### Copyright (C) 1996 by Ashvin Goel
 ###
@@ -56,8 +56,10 @@ DISTFILES = $(SOURCES) FAQ INSTALL Makefile.in NEWS \
 	README configure configure.in install-sh \
 	mkinstalldirs recordsadmin.in records-load.el \
 	records.info records.ps \
-	mailcrypt/mailcrypt.el mailcrypt/mc-pgp.el \
-	mailcrypt/mc-remail.el mailcrypt/mc-toplev.el
+	mailcrypt/FSF-timer.el mailcrypt/expect.el mailcrypt/mailcrypt.el \
+	mailcrypt/mc-gpg.el mailcrypt/mc-pgp.el mailcrypt/mc-pgp5.el \
+	mailcrypt/mc-remail.el mailcrypt/mc-setversion.el \
+	mailcrypt/mc-toplev.el
 
 # records.info records.dvi records.texi 
 

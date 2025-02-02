@@ -1,6 +1,7 @@
-;; mailcrypt.el v3.3, mail encryption with PGP
+;; mailcrypt.el v3.5.5, mail encryption with PGP
 ;; Copyright (C) 1995  Jin Choi <jin@atype.com>
 ;;                     Patrick LoPresti <patl@lcs.mit.edu>
+;;           (C) 1998  Len Budney <lbudney@pobox.com>
 ;; Any comments or suggestions welcome.
 ;; Inspired by pgp.el, by Gray Watson <gray@antaire.com>.
 
@@ -32,6 +33,7 @@
 
 (require 'easymenu)
 (require 'comint)
+(require 'rfc822)
 
 (eval-and-compile
   (condition-case nil (require 'itimer) (error nil))
@@ -41,7 +43,7 @@
   (if (not (fboundp 'buffer-substring-no-properties))
       (fset 'buffer-substring-no-properties 'buffer-substring)))
 
-(defconst mc-xemacs-p (string-match "Xemacs" emacs-version))
+(defconst mc-xemacs-p (string-match "XEmacs" emacs-version))
 
 (autoload 'mc-decrypt "mc-toplev" nil t)
 (autoload 'mc-verify "mc-toplev" nil t)
@@ -53,10 +55,14 @@
 (autoload 'mc-remailer-encrypt-for-chain "mc-remail" nil t)
 (autoload 'mc-remailer-insert-response-block "mc-remail" nil t)
 (autoload 'mc-remailer-insert-pseudonym "mc-remail" nil t)
+(autoload 'mc-setversion "mc-setversion" nil t)
 
 ;;}}}
 
 ;;{{{ Minor mode variables and functions
+
+(defvar mc-pgp-always-sign nil 
+  "*If t, always sign encrypted PGP messages, or never sign if 'never.")
 
 (defvar mc-read-mode nil
   "Non-nil means Mailcrypt read mode key bindings are available.")
@@ -146,7 +152,7 @@
 
 (defun mc-read-mode (&optional arg)
   "\nMinor mode for interfacing with cryptographic functions.
-
+\\<mc-read-mode-map>
 \\[mc-decrypt]\t\tDecrypt an encrypted message
 \\[mc-verify]\t\tVerify signature on a clearsigned message
 \\[mc-snarf]\t\tAdd public key(s) to keyring
@@ -163,7 +169,7 @@
 	
 (defun mc-write-mode (&optional arg)
   "\nMinor mode for interfacing with cryptographic functions.
-
+\\<mc-write-mode-map>
 \\[mc-encrypt]\t\tEncrypt (and optionally sign) message
 \\[mc-sign]\t\tClearsign message
 \\[mc-insert-public-key]\t\tExtract public key from keyring and insert into message
@@ -197,7 +203,9 @@
 ;;}}}
 
 ;;{{{ User variables.
-(defconst mc-version "3.3")
+(defconst mc-version "3.5.5")
+(defvar mc-temp-directory "/tmp"
+  "*Default temp directory to be used by Mailcrypt.")
 (defvar mc-default-scheme 'mc-scheme-pgp "*Default encryption scheme to use.")
 (defvar mc-passwd-timeout 60
   "*Time to deactivate password in seconds after a use.
@@ -243,15 +251,23 @@ If 'never, always use a viewer instead of replacing.")
     (vm-mode (decrypt . mc-vm-decrypt-message)
 	     (verify . mc-vm-verify-signature)
 	     (snarf . mc-vm-snarf-keys))
+    (vm-virtual-mode (decrypt . mc-vm-decrypt-message)
+		     (verify . mc-vm-verify-signature)
+		     (snarf . mc-vm-snarf-keys))
     (vm-summary-mode (decrypt . mc-vm-decrypt-message)
 		     (verify . mc-vm-verify-signature)
 		     (snarf . mc-vm-snarf-keys))
     (mh-folder-mode (decrypt . mc-mh-decrypt-message)
 		    (verify . mc-mh-verify-signature)
 		    (snarf . mc-mh-snarf-keys))
-    (gnus-summary-mode (decrypt . mc-gnus-summary-decrypt-message)
-		       (verify . mc-gnus-summary-verify-signature)
-		       (snarf . mc-gnus-summary-snarf-keys))
+    (message-mode (encrypt . mc-encrypt-message)
+                  (sign . mc-sign-message))
+    (gnus-summary-mode (decrypt . mc-gnus-decrypt-message)
+		       (verify . mc-gnus-verify-signature)
+		       (snarf . mc-gnus-snarf-keys))
+    (gnus-article-mode (decrypt . mc-gnus-decrypt-message)
+		       (verify . mc-gnus-verify-signature)
+		       (snarf . mc-gnus-snarf-keys))
     (mail-mode (encrypt . mc-encrypt-message)
 	       (sign . mc-sign-message))
     (vm-mail-mode (encrypt . mc-encrypt-message)
@@ -271,7 +287,10 @@ If 'never, always use a viewer instead of replacing.")
 
 (defvar mc-passwd-cache nil "Cache for passphrases.")
 
-(defvar mc-schemes '(("pgp" . mc-scheme-pgp)))
+(defvar mc-schemes '(("pgp50" . mc-scheme-pgp50)
+		     ("pgp" . mc-scheme-pgp)
+		     ("gpg" . mc-scheme-gpg)
+		     ))
 
 ;;}}}
 
@@ -313,20 +332,84 @@ stripping initial and trailing whitespace."
       (store-match-data data))))
 
 ;;; FIXME - Function never called?
-(defun mc-temp-display (beg end &optional name)
-  (let (tmp)
-    (if (not name)
-	(setq name mc-buffer-name))
-    (if (string-match name "*ERROR*")
-	(progn
-	  (message "mailcrypt: An error occured!  See *ERROR* buffer.")
-	  (beep)))
-    (setq tmp (buffer-substring beg end))
-    (delete-region beg end)
-    (save-excursion
-      (save-window-excursion
-	(with-output-to-temp-buffer name
-	  (princ tmp))))))
+;(defun mc-temp-display (beg end &optional name)
+;  (let (tmp)
+;    (if (not name)
+;	(setq name mc-buffer-name))
+;    (if (string-match name "*ERROR*")
+;	(progn
+;	  (message "mailcrypt: An error occured!  See *ERROR* buffer.")
+;	  (beep)))
+;    (setq tmp (buffer-substring beg end))
+;    (delete-region beg end)
+;    (save-excursion
+;      (save-window-excursion
+;	(with-output-to-temp-buffer name
+;	  (princ tmp))))))
+
+;; In case I ever decide to do this right.
+;; LRB - Thanks Pat! This helped a lot in updating mixmaster support.
+;; mc-field-name-regexp now catches precisely those email headers 
+;; which are RFC-822 compliant.
+(defconst mc-field-name-regexp 
+  (concat 
+   "^\\([" 
+   (char-to-string 33) "-" (char-to-string 57)
+   (char-to-string 59) "-" (char-to-string 126)
+   "]*\\)"))
+(defconst mc-field-body-regexp "\\(.*\\(\n[ \t].*\\)*\n\\)")
+
+(defun mc-get-fields (&optional matching bounds nuke)
+  "Get all header fields within BOUNDS.  Return as an
+alist ((FIELD-NAME . FIELD-BODY) (FIELD-NAME . FIELD-BODY) ...).
+
+Argument MATCHING, if present, is a regexp which each FIELD-NAME
+must match exactly.  Matching is case-insensitive.
+
+Optional arg NUKE, if non-nil, means eliminate all fields returned."
+  (save-excursion
+    (save-restriction
+      (let ((case-fold-search t)
+	    (header-field-regexp
+	     (concat mc-field-name-regexp ":" mc-field-body-regexp))
+	    ret name body field-start field-end)
+	;; Ensure exact match
+	(if matching
+	    (setq matching (concat "^\\(" matching "\\)$")))
+
+	(if bounds
+	    (narrow-to-region (car bounds) (cdr bounds)))
+
+	(goto-char (point-max))
+ 
+	(while (re-search-backward header-field-regexp nil 'move)
+	  (setq field-start (match-beginning 0))
+	  (setq field-end (match-end 0))
+	  (setq name (buffer-substring-no-properties
+		      (match-beginning 1) (match-end 1)))
+	  (setq body (buffer-substring-no-properties
+		      (match-beginning 2) (match-end 2)))
+	  (if (or (null matching) (string-match matching name))
+	      (progn
+		(setq ret (cons (cons name body) ret))
+		(if nuke
+		    (delete-region field-start field-end)))))
+	ret))))
+
+(defsubst mc-strip-address (addr)
+  "Strip everything from ADDR except the basic Email address."
+  (car (rfc822-addresses addr)))
+
+(defun mc-strip-addresses (addr-list)
+  "Strip everything from the addresses in ADDR-LIST except the basic
+Email address.  ADDR-LIST may be a single string or a list of strings."
+  (if (not (listp addr-list)) (setq addr-list (list addr-list)))
+  (setq addr-list
+	(mapcar
+	 (function (lambda (s) (rfc822-addresses s)))
+	 addr-list))
+  (setq addr-list (apply 'append addr-list))
+  (mapconcat 'mc-strip-address addr-list ", "))
 
 (defun mc-display-buffer (buffer)
   "Like display-buffer, but always display top of the buffer."
@@ -344,10 +427,11 @@ stripping initial and trailing whitespace."
 		(set-buffer buffer)
 		(goto-char (point-min))
 		(if (re-search-forward msg nil t)
-		    (buffer-substring (match-beginning 0) (match-end 0))
+		    (buffer-substring-no-properties
+		     (match-beginning 0) (match-end 0))
 		  (setq retval nil)
 		  default))))
-    (if msg (message "%s" msg))
+    (if msg (message-or-box "%s" msg))
     retval))
 
 (defun mc-process-region (beg end passwd program args parser &optional buffer)
@@ -359,22 +443,24 @@ stripping initial and trailing whitespace."
 	  (setq mybuf (or buffer (generate-new-buffer " *mailcrypt temp")))
 	  (set-buffer mybuf)
 	  (erase-buffer)
+	  (set-buffer obuf)
 	  (buffer-disable-undo mybuf)
 	  (setq proc
 		(apply 'start-process "*PGP*" mybuf program args))
 	  (if passwd
 	      (progn
 		(process-send-string proc (concat passwd "\n"))
-		(or mc-passwd-timeout (mc-deactivate-passwd))))
-	  (set-buffer obuf)
+		(or mc-passwd-timeout (mc-deactivate-passwd t))))
 	  (process-send-region proc beg end)
 	  (process-send-eof proc)
 	  (while (eq 'run (process-status proc))
 	    (accept-process-output proc 5))
 	  (setq result (process-exit-status proc))
+	  ;; Hack to force a status_notify() in Emacs 19.29
+	  (delete-process proc)
 	  (set-buffer mybuf)
 	  (goto-char (point-max))
-	  (if (re-search-backward "\nProcess .* finished\n\\'" nil t)
+	  (if (re-search-backward "\nProcess \\*PGP.*\n\\'" nil t)
 	      (delete-region (match-beginning 0) (match-end 0)))
 	  (goto-char (point-min))
 	  ;; CRNL -> NL
@@ -446,6 +532,7 @@ Return the passphrase.  If PROMPT is nil, only return value if cached."
       (setcdr cell nil)))
    mc-passwd-cache)
   (or inhibit-message
+      (not (interactive-p))
       (message "Passphrase%s deactivated"
 	       (if (> (length mc-passwd-cache) 1) "s" ""))))
 

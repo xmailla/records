@@ -22,6 +22,7 @@
 ;;{{{ Load some required packages
 (require 'mailcrypt)
 (require 'mail-utils)
+(require 'rfc822)
 
 (eval-when-compile
   ;; RMAIL
@@ -43,7 +44,9 @@
 (eval-and-compile
   (condition-case nil (require 'mailalias) (error nil)))
 
-(autoload 'mc-scheme-pgp "mc-pgp" nil t)
+(autoload 'mc-scheme-pgp   "mc-pgp"  nil t)
+(autoload 'mc-scheme-pgp50 "mc-pgp5" nil t)
+(autoload 'mc-scheme-gpg   "mc-gpg"  nil t)
 
 ;;}}}
 
@@ -53,10 +56,8 @@
   ;; Takes a comma separated string of recipients to encrypt for and,
   ;; assuming they were possibly extracted from the headers of a reply,
   ;; returns a list of the address components.
-  (mapcar (function
-	   (lambda (x)
-	     (car (cdr (mail-extract-address-components x)))))
-	  (mc-split "\\([ \t\n]*,[ \t\n]*\\)+" str)))
+  (mapcar 'mc-strip-address
+	  (rfc822-addresses str)))
 
 (defun mc-find-headers-end ()
   (save-excursion
@@ -134,18 +135,12 @@ of `mc-default-scheme'.  Returns t on success, nil otherwise."
 	       (concat "^" (regexp-quote mail-header-separator) "$"))
 	      (narrow-to-region (point-min) (point))
 	      (and (featurep 'mailalias)
+		   (not (featurep 'mail-abbrevs))
 		   mail-aliases
 		   (expand-mail-aliases (point-min) (point-max)))
-	      (mapconcat
-	       'identity
-	       (append
-		(mc-cleanup-recipient-headers
-		 (or (mail-fetch-field "to" nil t) ""))
-		(mc-cleanup-recipient-headers
-		 (or (mail-fetch-field "bcc" nil t) ""))
-		(mc-cleanup-recipient-headers
-		 (or (mail-fetch-field "cc" nil t) "")))
-	       ", ")))
+	      (mc-strip-addresses
+	       (mapcar 'cdr
+		       (mc-get-fields "to\\|cc\\|bcc")))))
 
       (if (not from)
 	  (save-restriction
@@ -161,8 +156,6 @@ of `mc-default-scheme'.  Returns t on success, nil otherwise."
 		    default-recipients
 		  (read-from-minibuffer "Recipients: " default-recipients))))
      
-      (or recipients (error "No recipients!"))
-
       (or start (setq start headers-end))
       (or end (setq end (point-max-marker)))
 
@@ -188,8 +181,23 @@ Returns a pair (SUCCEEDED . VERIFIED) where SUCCEEDED is t if the encryption
 succeeded and VERIFIED is t if it had a valid signature."
   (save-excursion
     (let ((schemes mc-schemes)
-	  limits scheme)
-      (while (and schemes
+	  limits 
+	  (scheme mc-default-scheme))
+
+      ; Attempt to find a message signed according to the default
+      ; scheme.
+      (if mc-default-scheme
+	  (setq
+	   limits
+	   (mc-message-delimiter-positions
+	    (cdr (assoc 'msg-begin-line (funcall mc-default-scheme)))
+	    (cdr (assoc 'msg-end-line (funcall mc-default-scheme))))))
+
+      ; We can't find a message signed in the default scheme.
+      ; Step through all the schemes we know, trying to identify
+      ; the applicable one by examining headers.
+      (while (and (null limits)
+		  schemes
 		  (setq scheme (cdr (car schemes)))
 		  (not (setq
 			limits
@@ -245,9 +253,11 @@ inhibits clearsigning (pgp)."
   (or end (setq end (point-max-marker)))
   (or (markerp end) (setq end (copy-marker end)))
   (run-hooks 'mc-pre-signature-hook)
-  (funcall (cdr (assoc 'signing-func (funcall scheme)))
-	   start end withkey unclearsig)
-  (run-hooks 'mc-post-signature-hook))
+  (if (funcall (cdr (assoc 'signing-func (funcall scheme)))
+	       start end withkey unclearsig)
+      (progn
+	(run-hooks 'mc-post-signature-hook)
+	t)))
 
 (defun mc-sign-message (&optional withkey scheme start end unclearsig)
   "Clear sign the message."
@@ -284,8 +294,23 @@ Show the result as a message in the minibuffer. Returns t if the signature
 is verified."
   (save-excursion
     (let ((schemes mc-schemes)
-	  limits scheme)
-      (while (and schemes
+	  limits 
+	  (scheme mc-default-scheme))
+
+      ; Attempt to find a message signed according to the default
+      ; scheme.
+      (if mc-default-scheme
+	  (setq
+	   limits
+	   (mc-message-delimiter-positions
+	    (cdr (assoc 'signed-begin-line (funcall mc-default-scheme)))
+	    (cdr (assoc 'signed-end-line (funcall mc-default-scheme))))))
+
+      ; We can't find a message signed in the default scheme.
+      ; Step through all the schemes we know, trying to identify
+      ; the applicable one by examining headers.
+      (while (and (null limits)
+		  schemes
 		  (setq scheme (cdr (car schemes)))
 		  (not
 		   (setq
@@ -354,11 +379,26 @@ Exact behavior depends on current major mode."
   (let ((schemes mc-schemes)
 	(start (point-min))
 	(found 0)
-	limits scheme)
+	limits 
+	(scheme mc-default-scheme))
     (save-excursion
       (catch 'done
 	(while t
-	  (while (and schemes
+
+	  ; Attempt to find a message signed according to the default
+	  ; scheme.
+	  (if mc-default-scheme
+	      (setq
+	       limits
+	       (mc-message-delimiter-positions
+		(cdr (assoc 'key-begin-line (funcall mc-default-scheme)))
+		(cdr (assoc 'key-end-line (funcall mc-default-scheme)))
+		start)))
+	  ; We can't find a message signed in the default scheme.
+	  ; Step through all the schemes we know, trying to identify
+	  ; the applicable one by examining headers.
+	  (while (and (null limits)
+		      schemes
 		      (setq scheme (cdr (car schemes)))
 		      (not
 		       (setq
@@ -441,7 +481,7 @@ Exact behavior depends on current major mode."
 		 (rmail-cease-edit)
 		 (rmail-kill-label "edited")
 		 (rmail-add-label "decrypted")
-		 (if (cdr decryption-result)
+		 (if (not (cdr decryption-result))
 		     (rmail-add-label "verified")))
 		(t
 		 (let ((tmp (generate-new-buffer "*Mailcrypt Viewing*")))
@@ -483,10 +523,11 @@ Exact behavior depends on current major mode."
 (defun mc-vm-decrypt-message ()
   "*Decrypt the contents of the current VM message"
   (interactive)
-  (let (from-line)
+  (let ((vm-frame-per-edit nil)
+	from-line)
     (if (interactive-p)
 	(vm-follow-summary-cursor))
-    (vm-select-folder-buffer)
+;   (vm-select-folder-buffer) ;; TNX Eric C. Newton for commenting out.
     (vm-check-for-killed-summary)
     (vm-error-if-folder-read-only)
     (vm-error-if-folder-empty)
@@ -505,7 +546,8 @@ Exact behavior depends on current major mode."
 	  ((and (not (eq mc-always-replace 'never))
 		(or mc-always-replace
 		    (y-or-n-p "Replace encrypted message with decrypted? ")))
-           (vm-edit-message-end))
+	   (let ((this-command 'vm-edit-message-end))
+	     (vm-edit-message-end)))
           (t
            (let ((tmp (generate-new-buffer "*Mailcrypt Viewing*")))
              (copy-to-buffer tmp (point-min) (point-max))
@@ -531,54 +573,49 @@ Exact behavior depends on current major mode."
 ;;}}}
 ;;{{{ GNUS
 
-(defun mc-gnus-summary-verify-signature ()
+(defun mc-gnus-verify-signature ()
   (interactive)
-  (gnus-summary-select-article)
-  (gnus-eval-in-buffer-window gnus-article-buffer
+  (gnus-summary-select-article t)
+  (save-excursion
+    (set-buffer gnus-original-article-buffer)
     (save-restriction (widen) (mc-verify-signature))))
 
-(defun mc-gnus-summary-snarf-keys ()
+(defun mc-gnus-snarf-keys ()
   (interactive)
-  (gnus-summary-select-article)
-  (gnus-eval-in-buffer-window gnus-article-buffer
+  (gnus-summary-select-article t)
+  (gnus-eval-in-buffer-window gnus-original-article-buffer
     (save-restriction (widen) (mc-snarf-keys))))
 
-(defun mc-gnus-summary-decrypt-message ()
+(defun mc-gnus-decrypt-message ()
   (interactive)
-  (gnus-summary-select-article)
-  (if (or (not (boundp 'gnus-version))
-	  (not (stringp gnus-version))
-	  (not (string-match "(ding)" gnus-version)))
-      (gnus-eval-in-buffer-window gnus-article-buffer
-	(save-restriction (widen) (mc-decrypt-message)))
-    ;; (ding) Gnus allows editing of articles in mail groups.
+  (gnus-summary-select-article t)
+  ;; Gnus 5 has the string "Gnus" instead of "GNUS" in gnus-version.
+  (if (not (let ((case-fold-search nil))
+	     (string-match "Gnus" gnus-version)))
+      (gnus-eval-in-buffer-window
+       gnus-article-buffer
+       (save-restriction (widen) (mc-decrypt-message)))
+    ;; Gnus 5 allows editing of articles.  (Actually, it makes a great
+    ;; mail reader.)
     (gnus-eval-in-buffer-window gnus-article-buffer
-      (gnus-summary-edit-article)
+      (gnus-summary-edit-article t)
       (save-restriction
 	(widen)
-	(cond ((not
-		(condition-case condition-data
-		    (car (mc-decrypt-message))
-		  (error
-		   (gnus-article-show-summary)
-		   (gnus-summary-show-article)
-		   (error (message "Decryption failed: %s"
-				   (car (cdr condition-data)))))))
-	       (message "Decryption failed.")
-	       (gnus-article-show-summary)
-	       (gnus-summary-show-article))
-
-	      ((and (not (eq mc-always-replace 'never))
+	(cond ((not (car (mc-decrypt-message)))
+	       (gnus-summary-edit-article-postpone))
+	      ((and (not (gnus-group-read-only-p))
+		    (not (eq mc-always-replace 'never))
 		    (or mc-always-replace
 			(y-or-n-p
 			 "Replace encrypted message on disk? ")))
 	       (gnus-summary-edit-article-done))
-
 	      (t
-	       (gnus-article-show-summary)))))))
+	       (gnus-summary-edit-article-postpone)))))))
 
 ;;}}}		
 ;;{{{ MH
+(defvar mc-mh-backup-msg 3
+  "If 0, never back up MH messages.  If 3, always back up messages.")
 
 (defun mc-mh-decrypt-message ()
   "Decrypt the contents of the current MH message in the show buffer."
@@ -598,7 +635,7 @@ Exact behavior depends on current major mode."
 	    (set-buffer (create-file-buffer msg-filename))
 	    (insert-file-contents msg-filename t)
 	    (if (setq decrypt-okay (car (mc-decrypt-message)))
-		(save-buffer)
+		(save-buffer mc-mh-backup-msg)
 	      (message "Decryption failed.")
 	      (set-buffer-modified-p nil))
 	    (kill-buffer nil))
@@ -612,11 +649,17 @@ Exact behavior depends on current major mode."
       (mh-show msg)
       (save-excursion
 	(set-buffer mh-show-buffer)
-	(if (setq decrypt-okay (car (mc-decrypt-message)))
-	    (progn
-	      (goto-char (point-min))
-	      (set-buffer-modified-p nil))
-	  (message "Decryption failed.")))
+      (let ((tmp (generate-new-buffer "*Mailcrypt Viewing*")))
+        (copy-to-buffer tmp (point-min) (point-max))
+        ;(switch-to-buffer tmp t)
+	(set-buffer tmp)
+        (goto-char (point-min))
+        (set-buffer-modified-p nil)
+        (if (setq decrypt-okay (car (mc-decrypt-message)))
+            (progn
+              (goto-char (point-min))
+              (set-buffer-modified-p nil))
+            (message "Decryption failed."))))
       (if (not decrypt-okay)
 	  (progn
 	    (mh-invalidate-show-buffer)

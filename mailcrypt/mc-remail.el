@@ -37,7 +37,7 @@
 ;;}}}
 ;;{{{ Functions dealing with remailer structures
 
-(defsubst mc-remailer-create (addr id prop pre-encr post-encr)
+(defsubst mc-remailer-create (addr id props pre-encr post-encr)
   "Create a remailer structure.
 
 ADDR is the remailer's Email address, a string.
@@ -45,13 +45,13 @@ ADDR is the remailer's Email address, a string.
 ID is the remailer's public key ID (a string) or nil if the same as
 ADDR.
 
-PROP is a list of properties, as strings.
+PROPS is a list of properties, as strings.
 
 PRE-ENCR is a list of pre-encryption functions.  Its elements will be
 called with the remailer structure itself as argument.
 
 POST-ENCR is similar, but for post-encryption functions."
-(list 'remailer addr id prop pre-encr post-encr))
+(list 'remailer addr id props pre-encr post-encr))
 
 (defsubst mc-remailerp (remailer)
   "Test whether REMAILER is a valid remailer struct."
@@ -64,8 +64,7 @@ POST-ENCR is similar, but for post-encryption functions."
 (defsubst mc-remailer-userid (remailer)
   "Return the userid with which to look up the public key for REMAILER."
   (or (nth 2 remailer)
-      (car (cdr (mail-extract-address-components
-		 (mc-remailer-address remailer))))))
+      (mc-strip-address (mc-remailer-address remailer))))
 
 (defsubst mc-remailer-properties (remailer)
   "Return the property list for REMAILER"
@@ -78,6 +77,16 @@ POST-ENCR is similar, but for post-encryption functions."
 (defsubst mc-remailer-post-encrypt-hooks (remailer)
   "Return the list of post-encryption hooks for REMAILER."
   (nth 5 remailer))
+
+(defun mc-remailer-remove-property (remailer prop)
+  (let ((props (append (mc-remailer-properties remailer) nil)))
+    (setq props (delete prop props))
+    (mc-remailer-create
+     (mc-remailer-address remailer)
+     (mc-remailer-userid remailer)
+     props
+     (mc-remailer-pre-encrypt-hooks remailer)
+     (mc-remailer-post-encrypt-hooks remailer))))
 
 ;;}}}
 ;;{{{ User variables
@@ -106,7 +115,7 @@ $remailer{\"NAME\"} = \"<EMAIL ADDRESS> PROPERTIES\";
 PROPERTIES is a space-separated set of strings.
 
 This format is named after Raphael Levien, who maintains a list of
-active remailers.  Do \"finger remailer-list@kiwi.cs.berkeley.edu\"
+active remailers.  Do \"finger rlist@publius.net\"
 for the latest copy of his list.")
 
 (defvar mc-remailer-user-chains nil
@@ -129,7 +138,11 @@ elements may be any of the following:
 2) A string naming another remailer chain to be spliced in
    at this point.
 
-3) An arbitrary Lisp form to be evaluated, which should
+3) A positive integer N representing a chain to be spliced in at this
+   point and consisting of a random permutation of the top N remailers
+   as ordered in the file `mc-levien-file-name'.
+
+4) An arbitrary Lisp form to be evaluated, which should
    return another REMAILER-LIST to be recursively processed and
    spliced in at this point.
 
@@ -145,6 +158,12 @@ list of remailers; see, for example, the function `mc-reread-levien-file'.
 To define your own chains, you probably want to use the variable
 `mc-remailer-user-chains'.  See that variable's documentation for
 format information.")
+
+(defvar mc-remailer-internal-ranking nil
+  "Ordered list of remailers, most reliable first.
+
+This variable is normally generated automatically from a human-readable
+list of remailers; see, for example, the function `mc-reread-levien-file'.")
 
 (defvar mc-remailer-user-response-block
   (function
@@ -181,15 +200,15 @@ This is a list of strings naming the preserved headers.  Note that
 should not be included in this list.")
 
 ;;}}}
-;;{{{ Functions for handling Levien format remailer lists
+;;{{{ Handling Levien format remailer lists
 
 (defun mc-parse-levien-buffer ()
   ;; Parse a buffer in Levien format.
   (goto-char (point-min))
-  (let (chains remailer remailer-name)
+  (let (chains remailer remailer-name ranking)
     (while
 	(re-search-forward
-	 "^\\$remailer{\"\\(.+\\)\"}[ \t]*=[ \t]*\"\\(.*\\)\";"
+	 "^\\$remailer{['\"]\\(.+\\)['\"]}[ \t]*=[ \t]*['\"]\\(.*\\)['\"];"
 	 nil t)
       (let ((name (buffer-substring-no-properties
 		   (match-beginning 1) (match-end 1)))
@@ -207,10 +226,11 @@ should not be included in this list.")
 	      property-list (cdr property-list)
 	      remailer-name name)
 	(if (not
-	     (and (or (member "pgp" property-list)
-		      (member "pgp." property-list))
-		  (or (member "cpunk" property-list) ; hurm...
-		      (member "eric" property-list)))) ; fixme?
+	     (or (member "mix" property-list)
+		 (and (or (member "pgp" property-list)
+			  (member "pgp." property-list))
+		      (or (member "cpunk" property-list)
+			  (member "eric" property-list)))))
 	    (setq remailer nil)
 	  (setq remailer
 		(mc-remailer-create
@@ -223,7 +243,17 @@ should not be included in this list.")
 		 ))))
       (if (not (null remailer))
 	  (setq chains (cons (list remailer-name remailer) chains))))
-    chains))
+    (goto-char (point-min))
+    (if (re-search-forward "----------" nil t) ; Locate rankings at bottom
+	;; Read each word in the rankings section.  Each time we 
+	;; hit a remailer we've identified, append it to the ranking
+	;; list.  Thus we sort remailers according to rank.
+	(while (re-search-forward "^\\([a-zA-Z0-9\\-]+\\) " nil t)
+	  (setq remailer-name (buffer-substring-no-properties
+			       (match-beginning 1) (match-end 1)))
+	  (if (assoc remailer-name chains)
+	      (setq ranking (append ranking (list remailer-name))))))
+    (cons chains ranking)))
 
 (defun mc-read-levien-file ()
   "Read the Levien format file specified in `mc-levien-file-name'.
@@ -240,12 +270,30 @@ encryption."
 (defun mc-reread-levien-file ()
   "Read the Levien format file specified in `mc-levien-file-name'.
 
-Place result in `mc-remailer-internal-chains'.
+Place result in `mc-remailer-internal-chains' and `mc-remailer-internal-ranking'.
 
 See the documentation for the variable `mc-levien-file-name' for
 a description of Levien file format."
   (interactive)
-  (setq mc-remailer-internal-chains (mc-read-levien-file)))
+  (let ((parsed-levien-file (mc-read-levien-file)))
+    (setq mc-remailer-internal-chains (car parsed-levien-file)
+	  mc-remailer-internal-ranking (cdr parsed-levien-file))))
+
+;;}}}
+;;{{{ Arbitrary chain choice
+
+(defun mc-remailer-choose-first (n &optional l)
+  (cond
+   ((= n 0) nil)
+   ((null l) (mc-remailer-choose-first n mc-remailer-internal-ranking))
+   (t (cons (car l) (mc-remailer-choose-first (1- n) (cdr l))))))
+
+(defun mc-remailer-choose-chain (n)
+  (if (null mc-remailer-internal-ranking)
+      (error "No ranking information, cannot choose the %d best remailer%s"
+	     n (if (> n 1) "s" "")))
+  (append (shuffle-vector (vconcat (mc-remailer-choose-first n)))
+	  nil))
 
 ;;}}}
 ;;{{{ Canonicalization function
@@ -256,18 +304,23 @@ a description of Levien file format."
    ((stringp elmt)
     (mc-remailer-canonicalize-chain (cdr (assoc elmt chains-alist))
 				    chains-alist))
+   ((integerp elmt)
+    (mc-remailer-canonicalize-chain (mc-remailer-choose-chain elmt)
+				    chains-alist))
    (t (mc-remailer-canonicalize-chain (eval elmt) chains-alist))))
 
-(defun mc-remailer-canonicalize-chain (chain chains-alist)
+(defun mc-remailer-canonicalize-chain (chain &optional chains-alist)
   ;; Canonicalize a remailer chain with respect to CHAINS-ALIST.
   ;; That is, use CHAINS-ALIST to resolve strings.
   ;; Here is where we implement the functionality described in
   ;; the documentation for the variable `mc-remailer-user-chains'.
+  (if (null chains-alist)
+      (setq chains-alist (mc-remailer-make-chains-alist)))
   (cond
    ((null chain) nil)
    ;; Handle case where chain is actually a string or a single
    ;; remailer.
-   ((or (stringp chain) (mc-remailerp chain))
+   ((or (stringp chain) (mc-remailerp chain) (integerp chain))
     (mc-remailer-canonicalize-elmt chain chains-alist))
    (t
     (let ((first (elt chain 0))
@@ -278,47 +331,6 @@ a description of Levien file format."
 
 ;;}}}
 ;;{{{ Auxiliaries for mail header munging
-
-;; In case I ever decide to do this right.
-(defconst mc-field-name-regexp "^\\(.+\\)")
-(defconst mc-field-body-regexp "\\(.*\\(\n[ \t].*\\)*\n\\)")
-
-(defun mc-get-fields (&optional matching bounds nuke)
-  "Get all header fields within BOUNDS.  Return as an
-alist ((FIELD-NAME . FIELD-BODY) (FIELD-NAME . FIELD-BODY) ...).
-
-Argument MATCHING, if present, is a regexp which each FIELD-NAME
-must match exactly.  Matching is case-insensitive.
-
-Optional arg NUKE, if non-nil, means eliminate all fields returned."
-  (save-excursion
-    (save-restriction
-      (let ((case-fold-search t)
-	    (header-field-regexp
-	     (concat mc-field-name-regexp ":" mc-field-body-regexp))
-	    ret name body field-start field-end)
-	;; Ensure exact match
-	(if matching
-	    (setq matching (concat "^\\(" matching "\\)$")))
-
-	(if bounds
-	    (narrow-to-region (car bounds) (cdr bounds)))
-
-	(goto-char (point-max))
- 
-	(while (re-search-backward header-field-regexp nil 'move)
-	  (setq field-start (match-beginning 0))
-	  (setq field-end (match-end 0))
-	  (setq name (buffer-substring-no-properties
-		      (match-beginning 1) (match-end 1)))
-	  (setq body (buffer-substring (match-beginning 2) (match-end 2)))
-	  (if (or (null matching) (string-match matching name))
-	      (progn
-		(setq ret (cons (cons name body) ret))
-		(if nuke
-		    (delete-region field-start field-end)))))
-	ret))))
-
 
 (defsubst mc-nuke-field (field &optional bounds)
   ;; Delete all fields exactly matching regexp FIELD from header,
@@ -425,7 +437,10 @@ Optional arg NUKE, if non-nil, means eliminate all fields returned."
 	  (mc-disjunction-regexp mc-remailer-preserved-headers))
     (setq preserved (mc-get-fields preserved-regexp main-header t))
     (if preserved (goto-char (cdr (mc-find-hash-header t))))
-    (mapcar (function (lambda (c) (insert (car c) ":" (cdr c))))
+    (mapcar (function
+	     (lambda (c)
+	       (insert (car c) ":"
+		       (mc-eliminate-continuation-lines (cdr c)))))
 	    preserved)
 
     (if (and (mc-find-hash-header) (not (member "hash" props)))
@@ -438,12 +453,11 @@ Optional arg NUKE, if non-nil, means eliminate all fields returned."
 	       (error "Remailer %s does not support hashmarks" addr))
 	      (t (mc-rewrite-news-to-mail remailer)))
       (and (featurep 'mailalias)
+	   (not (featurep 'mail-abbrevs))
 	   mail-aliases
 	   (expand-mail-aliases (car main-header) (cdr main-header)))
-      (setq to
-	    (mapconcat (function (lambda (c) (cdr c)))
-		       (mc-get-fields "To" main-header)
-		       ", "))
+      (setq to (mc-strip-addresses
+		(mapcar 'cdr (mc-get-fields "To" main-header))))
       (if (string-match "," to)
 	  (error "Remailer %s does not support multiple recipients." addr))
       (setq to-field
@@ -451,7 +465,8 @@ Optional arg NUKE, if non-nil, means eliminate all fields returned."
 		"Send-To"
 	      (cond
 	       ((member "eric" props) "Anon-Send-To")
-	       (t "Request-Remailing-To"))))
+	       ((member "cpunk" props) "Request-Remailing-To")
+	       (t (error "Remailer %s is not type-1" addr)))))
       (mc-replace-field to-field to colon-header)
       (mc-nuke-field "Reply-to" main-header))))
 	
@@ -466,14 +481,25 @@ Optional arg NUKE, if non-nil, means eliminate all fields returned."
 	  (mapconcat 'identity regexps "\\)\\|\\(")
 	  "\\)"))
 
+; Quiet a warning message when the user hasn't set this.
+(defvar gnus-user-from-line nil)
+
 (defun mc-user-mail-address ()
   "Figure out the user's Email address as best we can."
-  (cond ((stringp mail-default-reply-to)
-	 mail-default-reply-to)
-	((boundp 'user-mail-address) user-mail-address)
-	(t (concat (user-login-name) "@" (system-name)))))
+  (mc-strip-address
+   (cond ((and (boundp 'gnus-user-from-line)
+	       (stringp gnus-user-from-line))
+	  gnus-user-from-line)
+	 ((stringp mail-default-reply-to) mail-default-reply-to)
+	 ((boundp 'user-mail-address) user-mail-address)
+	 (t (concat (user-login-name) "@" (system-name))))))
 
-(defsubst mc-remailer-make-chains-alist ()
+(defun mc-eliminate-continuation-lines (string)
+  (while (string-match "\n[\t ]+" string)
+    (setq string (replace-match " " t nil string)))
+  string)
+
+(defun mc-remailer-make-chains-alist ()
   (if (null mc-remailer-internal-chains)
       (mc-reread-levien-file))
   (append mc-remailer-internal-chains mc-remailer-user-chains))
@@ -484,12 +510,14 @@ Optional arg NUKE, if non-nil, means eliminate all fields returned."
 See the documentation for the variable `mc-remailer-pseudonyms' for
 more information."
   (interactive)
-  (let ((pseudonym
-	 (cond ((null mc-remailer-pseudonyms)
-		(read-from-minibuffer "Pseudonym: "))
-	       (t
-		(completing-read "Pseudonym: "
-			    (mapcar 'list mc-remailer-pseudonyms))))))
+  (let ((completion-ignore-case t)
+	pseudonym)
+    (setq pseudonym
+	  (cond ((null mc-remailer-pseudonyms)
+		 (read-from-minibuffer "Pseudonym: "))
+		(t
+		 (completing-read "Pseudonym: "
+				  (mapcar 'list mc-remailer-pseudonyms)))))
     (if (not (string-match "\\S +@\\S +" pseudonym))
 	(setq pseudonym (concat pseudonym " <x@x.x>")))
     (mc-replace-colon-field "From" pseudonym)))
@@ -502,6 +530,12 @@ be passed to this program for rewriting.")
 
 (defvar mc-mixmaster-list-path nil
   "*Path to the Mixmaster type2.list file.")
+
+(defun mc-demix (&rest chain)
+  "Use arguments as a remailer-list and return a new list with the
+\"mix\" property removed from all the elements."
+  (mapcar (function (lambda (r) (mc-remailer-remove-property r "mix")))
+	  (mc-remailer-canonicalize-chain chain)))
 
 (defun mc-mixmaster-process (beg end recipients preserved mix-chain)
   ;; Run a region through Mixmaster.
@@ -516,10 +550,6 @@ be passed to this program for rewriting.")
     (setq mix-chain (mapcar (function (lambda (x) (format "%d" x))) mix-chain))
     ;; Handle case of empty message
     (if (< end (point)) (setq end (point)))
-
-    ;; Debug HACK
-;;;    (read-char-exclusive)
-
     (setq ret
 	  (apply 'call-process-region beg end mc-mixmaster-path t t nil
 		 "-f" "-o" "stdout" "-l" mix-chain))
@@ -557,8 +587,7 @@ be passed to this program for rewriting.")
   (if (or (null chain)
 	  (not (member "mix" (mc-remailer-properties (car chain)))))
       nil
-    (cons (cdr (assoc (car (cdr (mail-extract-address-components 
-				 (mc-remailer-address (car chain)))))
+    (cons (cdr (assoc (mc-strip-address (mc-remailer-address (car chain)))
 		      (mc-mixmaster-alist)))
 	  (mc-mixmaster-translate-chain (cdr chain)))))
 
@@ -576,9 +605,10 @@ be passed to this program for rewriting.")
 	(main-header (mc-find-main-header))
 	(colon-header (mc-find-colon-header))
 	(hash-header (mc-find-hash-header))
+        (newsgroups (mc-get-fields "Newsgroups" nil t))
 	recipients preserved newsgroups first last rest preserved-regexp)
 
-    ;; Figure out FIRST, and LAST. FIRST is the first Mixmaster in the
+    ;; Figure out FIRST and LAST. FIRST is the first Mixmaster in the
     ;; chain.  LAST is the last.
     (setq first (car chain)
 	  rest chain)
@@ -607,12 +637,20 @@ be passed to this program for rewriting.")
     
     ;; Expand aliases and get recipients.
     (and (featurep 'mailalias)
+	 (not (featurep 'mail-abbrevs))
 	 mail-aliases
 	 (expand-mail-aliases (car main-header) (cdr main-header)))
     (setq recipients
 	  (mc-cleanup-recipient-headers
 	   (mapconcat 'cdr (mc-get-fields "To" main-header t) ", ")))
-    (setq newsgroups (mc-get-fields "Newsgroups" nil t))
+    (if newsgroups
+	(setq newsgroups 
+	  (mc-cleanup-recipient-headers
+	   (cdr 
+	    (assoc "Newsgroups" newsgroups)))))
+    ;; Mixmaster does not support posting...
+;    (if newsgroups
+    ;; Now they do! (1998)
     (if (and newsgroups
 	     (not (member "post" (mc-remailer-properties last))))
 	(error "Remailer %s does not support posting"
@@ -620,10 +658,12 @@ be passed to this program for rewriting.")
     (setq
      recipients
      (append (mapcar
-	      (function (lambda (c) (concat "Post:" (cdr c)))) newsgroups)
+	      (function (lambda (c) (concat "Post: " c))) newsgroups)
 	     recipients))
 
-    ;; Maybe this should be in a function somewhere.
+    (mapcar
+     (function (lambda (c) (message c))) recipients)
+
     (setq
      preserved-regexp
      (mc-disjunction-regexp (cons "Subject" mc-remailer-preserved-headers)))
@@ -633,8 +673,12 @@ be passed to this program for rewriting.")
 
     ;; Convert preserved header alist to simple list of strings
     (setq preserved
-	  (mapcar (function (lambda (c) (concat (car c) ":" (cdr c))))
-		  preserved))
+	  (mapcar
+	   (function
+	    (lambda (c)
+	      (concat (car c) ":"
+		      (mc-eliminate-continuation-lines (cdr c)))))
+	   preserved))
 
     ;; Do the conversion
     (goto-char (cdr main-header))
@@ -643,9 +687,9 @@ be passed to this program for rewriting.")
 			  mix-chain)
 
     (mc-replace-field "To"
-		      (concat (mc-remailer-address first) " " mc-remailer-tag)
+		      (concat
+		       (mc-remailer-address first) " " mc-remailer-tag)
 		      main-header)))
-    
 
 ;;}}}
 ;;{{{ High level message rewriting
@@ -712,7 +756,7 @@ be passed to this program for rewriting.")
       (mc-rewrite-for-chain
        (if (eq rest chain) (cdr rest) rest) pause)
       (if (eq rest chain)
-	  (mc-rewrite-for-remailer (car chain))
+	  (mc-rewrite-for-remailer (car chain) pause)
 	(mc-rewrite-for-mixmaster chain pause)))))
 
 (defun mc-unparse-chain (chain)
@@ -776,15 +820,12 @@ layer of the block before encrypting it."
 	    (mc-remailer-make-response-block (if (> arg 1) t)))
       (set-buffer buf)
       (setq main-header (mc-find-main-header))
-      (setq to (mc-get-fields "To" main-header))
-      (setq
-       addr
-       (concat "<" (nth 1
-			(mail-extract-address-components (cdr (car to))))
-	       ">"))
+      (setq to (cdr (car (mc-get-fields "To" main-header))))
+      (setq addr (concat "<" (mc-strip-address to) ">"))
       (goto-char (cdr main-header))
       (forward-line 1)
-      (setq block (buffer-substring (point) (point-max))
+      (setq block (buffer-substring-no-properties
+		   (point) (point-max))
 	    lines (count-lines (point) (point-max)))
       (kill-buffer buf))
     (let ((opoint (point)))

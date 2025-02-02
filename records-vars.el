@@ -1,7 +1,7 @@
 ;;;
 ;;; records-vars.el
 ;;;
-;;; $Id: records-vars.el,v 1.7 1999/07/12 18:55:06 ashvin Exp $
+;;; $Id: records-vars.el,v 1.8 2000/01/18 11:27:39 ashvin Exp $
 ;;;
 ;;; Copyright (C) 1996 by Ashvin Goel
 ;;;
@@ -57,19 +57,29 @@ Valid values are 0, 1 or 2 only.")
 ;;; Use M-x set-variable records-.* (records- followed by completion) 
 ;;; to see all these variables.
 ;;;
-(defvar records-fontify t
-  "* Enable records fontification.")
+(defvar records-mode-use-font-lock t 
+"* Enable fontification in records mode.
+If font-lock-auto-fontify is t, records may be fontified even if this
+value is nil. In that case, to turn of records fontification, add
+\"records-mode\" as an element to the list called 
+font-lock-mode-disable-list.")
+
+(defvar records-mode-font-lock-keywords
+  '(
+    ;; originally used to be font-lock-reference-face
+    ("^link:\\ <\\(.*\\)>$" 1 bold-italic) ; link
+    ;; next regexp obtained from records-subject-regexp
+    ;; originally used to be font-lock-keyword-face
+    ("^\\* \\(.*\\)\n\\-\\-\\-+$" . bold) ; subject
+    ("^\\(END_\\)?TODO:?" . font-lock-warning-face) ; todo
+    ("^TODO:\\ \\(//\\ .*$\\)" 1 font-lock-comment-face)) ; todo comment
+  "* Font-lock keywords for records mode.")
 
 (defvar records-subject-read-only t
   "* If t, records subjects are made read-only.
 This disables any accidental updates to a records subject.
 The down side is that if any part of the subject is copied to a record body,
 it is read-only and does not allow editing of that part.")
-
-(defvar records-bold-face (copy-face 'bold 'records-bold-face)
-  "* Face to use for records-index-mode and records-mode subjects.
-The name of the face and the name of the variable are both the same.
-The default face is copied from 'bold.")
 
 ;; todo variables
 (defvar	records-todo-prev-day nil

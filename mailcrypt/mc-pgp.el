@@ -23,11 +23,12 @@
 
 (defvar mc-pgp-user-id (user-login-name)
   "*PGP ID of your default identity.")
-(defvar mc-pgp-always-sign nil 
-  "*If t, always sign encrypted PGP messages, or never sign if 'never.")
 (defvar mc-pgp-path "pgp" "*The PGP executable.")
 (defvar mc-pgp-display-snarf-output nil
   "*If t, pop up the PGP output window when snarfing keys.")
+(defvar mc-pgp-always-fetch nil
+  "*If t, always fetch missing keys. If nil, prompt user. If 'never,
+never fetch keys, and don't ask.")
 (defvar mc-pgp-alternate-keyring nil
   "*Public keyring to use instead of default.")
 (defvar mc-pgp-comment
@@ -35,13 +36,13 @@
   "*Comment field to appear in ASCII armor output.  If nil, let PGP
 use its default.")
 
-(defconst mc-pgp-msg-begin-line "-----BEGIN PGP MESSAGE-----"
+(defconst mc-pgp-msg-begin-line "^-----BEGIN PGP MESSAGE-----\r?$"
   "Text for start of PGP message delimiter.")
-(defconst mc-pgp-msg-end-line "-----END PGP MESSAGE-----"
+(defconst mc-pgp-msg-end-line "^-----END PGP MESSAGE-----\r?$"
   "Text for end of PGP message delimiter.")
-(defconst mc-pgp-signed-begin-line "-----BEGIN PGP SIGNED MESSAGE-----"
+(defconst mc-pgp-signed-begin-line "^-----BEGIN PGP SIGNED MESSAGE-----\r?$"
   "Text for start of PGP signed messages.")
-(defconst mc-pgp-signed-end-line "-----END PGP SIGNATURE-----"
+(defconst mc-pgp-signed-end-line "^-----END PGP SIGNATURE-----\r?$"
   "Text for end of PGP signed messages.")
 (defconst mc-pgp-key-begin-line "^-----BEGIN PGP PUBLIC KEY BLOCK-----\r?$"
   "Text for start of PGP public key.")
@@ -94,9 +95,10 @@ PGP ID.")
     (let ((keyring (concat (mc-get-pgp-keydir) "secring"))
 	  (result (cdr-safe (assoc str mc-pgp-key-cache)))
 	  (key-regexp
-	   "^\\(pub\\|sec\\)\\s +[^/]+/\\(\\S *\\)\\s +\\S +\\s +\\(.*\\)$")
+	   "^\\(\\(pub\\|sec\\)\\s +[^/]+/\\(\\S *\\)\\s +\\S +\\s +\\(.*\\)\\)$")
+	  (revoke-regexp "REVOKED")
 	  (obuf (current-buffer))
-	  buffer)
+	  buffer key-start key-end)
       (if (null result)
 	  (unwind-protect
 	      (progn
@@ -105,21 +107,29 @@ PGP ID.")
 			      "+language=en" "-kv" str keyring)
 		(set-buffer buffer)
 		(goto-char (point-min))
-		(if (re-search-forward key-regexp nil t)
+		(while (and (null result)
+			    (re-search-forward key-regexp nil t))
 		    (progn
 		      (setq result
 			    (cons (buffer-substring-no-properties
-				   (match-beginning 3) (match-end 3))
+				   (match-beginning 4) (match-end 4))
 				  (concat
 				   "0x"
 				   (buffer-substring-no-properties
-				    (match-beginning 2) (match-end 2)))))
-		      (setq mc-pgp-key-cache (cons (cons str result)
-						   mc-pgp-key-cache)))))
+				    (match-beginning 3) (match-end 3)))))
+		      (setq key-start (match-beginning 1))
+		      (setq key-end (match-end 1))
+		      (save-restriction
+			    (narrow-to-region key-start key-end)
+			    (goto-char (point-min))
+			    (if (re-search-forward revoke-regexp nil t)
+				(setq result nil)
+			      (setq mc-pgp-key-cache 
+				    (cons (cons str result)
+					  mc-pgp-key-cache)))))))
 	    (if buffer (kill-buffer buffer))
 	    (set-buffer obuf)))
-      (if (null result)
-	  (error "No PGP secret key for %s" str))
+      (if (null result) nil )             ; We don't mind a missing "secring"
       result)))
 
 (defun mc-pgp-generic-parser (result)
@@ -146,13 +156,15 @@ PGP ID.")
 (defun mc-pgp-encrypt-region (recipients start end &optional id sign)
   (let ((process-environment process-environment)
 	(buffer (get-buffer-create mc-buffer-name))
-	(msg "Encrypting...")
 	;; Crock.  Rewrite someday.
 	(mc-pgp-always-sign mc-pgp-always-sign)
 	(obuf (current-buffer))
-	args key passwd result pgp-id)
+	action msg args key passwd result pgp-id)
     (setq args (list "+encrypttoself=off +verbose=1" "+batchmode"
-		     "+language=en" "-feat"))
+		     "+language=en" "-fat"))
+    (setq action (if recipients "Encrypting" "Armoring"))
+    (setq msg (format "%s..." action))  ; May get overridden below
+    (if recipients (setq args (cons "-e" args)))
     (if mc-pgp-comment
 	(setq args (cons (format "+comment=%s" mc-pgp-comment) args)))
     (if mc-pgp-alternate-keyring
@@ -163,6 +175,7 @@ PGP ID.")
 	(progn
 	  (setq mc-pgp-always-sign t)
 	  (setq key (mc-pgp-lookup-key (or id mc-pgp-user-id)))
+	  (if (not key) (error "No key available for signing."))
 	  (setq passwd
 		(mc-activate-passwd
 		 (cdr key)
@@ -170,13 +183,13 @@ PGP ID.")
 	  (setq args
 		(nconc args (list "-s" "-u" (cdr key))))
 	  (setenv "PGPPASSFD" "0")
-	  (setq msg (format "Encrypting+signing as %s ..." (car key))))
+	  (setq msg (format "%s+signing as %s ..." action (car key))))
       (setq mc-pgp-always-sign 'never))
 
     (or key
 	(setq key (mc-pgp-lookup-key mc-pgp-user-id)))
 
-    (if mc-encrypt-for-me
+    (if (and recipients mc-encrypt-for-me)
 	(setq recipients (cons (cdr key) recipients)))
 
     (setq args (append args recipients))
@@ -192,12 +205,17 @@ PGP ID.")
 	    (if result (error "This should never happen."))
 	    (setq pgp-id (buffer-substring-no-properties
 			  (match-beginning 1) (match-end 1)))
-	    (and
-	     (y-or-n-p
-	      (format "Key for '%s' not found; try to fetch? " pgp-id))
-	     (mc-pgp-fetch-key (cons pgp-id nil))
-	     (set-buffer obuf)
-	     (mc-pgp-encrypt-region recipients start end id)))
+	    (if (and (not (eq mc-pgp-always-fetch 'never))
+		     (or mc-pgp-always-fetch
+			 (y-or-n-p
+			  (format "Key for '%s' not found; try to fetch? "
+				  pgp-id))))
+		(progn
+		  (mc-pgp-fetch-key (cons pgp-id nil))
+		  (set-buffer obuf)
+		  (mc-pgp-encrypt-region recipients start end id))
+	      (mc-message mc-pgp-nokey-re buffer)
+	      nil))
 	(if (not result)
 	    nil
 	  (message "%s Done." msg)
@@ -214,8 +232,8 @@ PGP ID.")
 	 (cons (point) (point-max)))
 	((eq result 1)
 	 (re-search-forward
-	  "\\(File is conventionally encrypted\\. *\\)?Just a moment\\.+")
-	 (if (eq (match-beginning 1) (match-end 1))
+	  "\\(\\(^File is conven.*\\)?Just a moment\\.+\\)\\|\\(^\\.\\)")
+	 (if (eq (match-beginning 2) (match-end 2))
 	     (if (looking-at
 		  "\nFile has signature.*\\(\n\a.*\n\\)*\nWARNING:.*\n")
 		 (goto-char (match-end 0)))
@@ -229,10 +247,10 @@ PGP ID.")
   ;; the decryption succeeded and verified is t if there was a valid signature
   (let ((process-environment process-environment)
 	(buffer (get-buffer-create mc-buffer-name))
-	(obuf (current-buffer))
 	args key new-key passwd result pgp-id)
     (undo-boundary)
     (setq key (mc-pgp-lookup-key (or id mc-pgp-user-id)))
+;    (if (not key) (error "No key available for decrypting."))
     (setq
      passwd
      (if key
@@ -263,8 +281,10 @@ PGP ID.")
 				       (match-beginning 1)
 				       (match-end 1))))))
       (if (and pgp-id
-	       (y-or-n-p
-		(format "Key %s not found; attempt to fetch? " pgp-id))
+	       (not (eq mc-pgp-always-fetch 'never))
+	       (or mc-pgp-always-fetch
+		   (y-or-n-p
+		    (format "Key %s not found; attempt to fetch? " pgp-id)))
 	       (mc-pgp-fetch-key (cons nil pgp-id)))
 	  (progn
 	    (undo-start)
@@ -273,26 +293,34 @@ PGP ID.")
 	(mc-message mc-pgp-key-expected-re buffer)
 	(cons t (eq result 0))))
      ;; Decryption failed; maybe we need to use a different user-id
-     ((and
-       (set-buffer buffer)
-       (goto-char (point-min))
-       (re-search-forward
-	"^Key for user ID:.*\n.*Key ID \\([0-9A-F]+\\)" nil t)
-       (setq new-key
-	     (mc-pgp-lookup-key
-	      (concat "0x" (buffer-substring-no-properties (match-beginning 1)
-							   (match-end 1)))))
-       (not (and id (equal key new-key))))
-      (set-buffer obuf)
+     ((save-excursion
+	(and
+	 (set-buffer buffer)
+	 (goto-char (point-min))
+	 (re-search-forward
+	  "^Key for user ID:.*\n.*Key ID \\([0-9A-F]+\\)" nil t)
+	 (setq new-key
+	       (mc-pgp-lookup-key
+		(concat "0x" (buffer-substring-no-properties
+			      (match-beginning 1)
+			      (match-end 1)))))
+	 (not (and id (equal key new-key)))))
       (mc-pgp-decrypt-region start end (cdr new-key)))
      ;; Or maybe it is conventionally encrypted
-     ((and
-       (set-buffer buffer)
-       (goto-char (point-min))
-       (re-search-forward "^File is conventionally encrypted" nil t))
-      (set-buffer obuf)
+     ((save-excursion
+	(and
+	 (set-buffer buffer)
+	 (goto-char (point-min))
+	 (re-search-forward "^File is conventionally encrypted" nil t)))
       (if (null key) (mc-deactivate-passwd t))
       (mc-pgp-decrypt-region start end "***** CONVENTIONAL *****"))
+     ;; Or maybe this is the wrong PGP version
+     ((save-excursion
+	(and
+	 (set-buffer buffer)
+	 (goto-char (point-min))
+	 (re-search-forward "Unsupported packet format" nil t)))
+      (mc-message mc-pgp-error-re buffer "Not encrypted for PGP 2.6"))
      (t
       (mc-display-buffer buffer)
       (if (mc-message "^\aError: +Bad pass phrase\\.$" buffer)
@@ -305,6 +333,7 @@ PGP ID.")
 	(buffer (get-buffer-create mc-buffer-name))
 	passwd args key)
     (setq key (mc-pgp-lookup-key (or id mc-pgp-user-id)))
+    (if (not key) (error "No key available for signing."))
     (setq passwd
 	  (mc-activate-passwd
 	   (cdr key)
@@ -359,8 +388,10 @@ PGP ID.")
 		   (concat "0x" (buffer-substring-no-properties
 				 (match-beginning 1)
 				 (match-end 1))))
-	     (y-or-n-p
-	      (format "Key %s not found; attempt to fetch? " pgp-id))
+	     (not (eq mc-pgp-always-fetch 'never))
+	     (or mc-pgp-always-fetch
+		 (y-or-n-p
+		  (format "Key %s not found; attempt to fetch? " pgp-id)))
 	     (mc-pgp-fetch-key (cons nil pgp-id))
 	     (set-buffer obuf))
 	    (mc-pgp-verify-region start end t)
@@ -431,15 +462,19 @@ PGP ID.")
 
 ;;{{{ Key fetching
 
+(defvar mc-pgp-always-fetch nil
+  "*If t, always attempt to fetch missing keys, or never fetch if
+'never.")
+
 (defvar mc-pgp-keyserver-url-template
-  "/htbin/pks-extract-key.pl?op=get&search=%s"
-  "The URL to pass to the keyserver")
+  "/pks/lookup?op=get&search=%s"
+  "The URL to pass to the keyserver.")
 
 (defvar mc-pgp-keyserver-address "pgp.ai.mit.edu"
-  "Host name of keyserver")
+  "Host name of keyserver.")
 
-(defvar mc-pgp-keyserver-port 80
-  "The port on which the keyserver's HTTP daemon lives")
+(defvar mc-pgp-keyserver-port 11371
+  "Port on which the keyserver's HTTP daemon lives.")
 
 (defvar mc-pgp-fetch-timeout 20
   "*Timeout, in seconds, for any particular key fetch operation.")

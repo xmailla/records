@@ -1,11 +1,11 @@
-This is Info file records.info, produced by Makeinfo version 1.68 from
-the input file ./records.texi.
+This is records.info, produced by Makeinfo version 3.12h from
+./records.texi.
 
 START-INFO-DIR-ENTRY
 *  Records: (records).        Records: personal diary software
 END-INFO-DIR-ENTRY
 
-   Records Copyright (C) 1995-1999 Ashvin Goel.
+   Records Copyright (C) 1995-2000 Ashvin Goel.
 
    Permission is granted to make and distribute verbatim copies of this
 manual provided the copyright notice and this permission notice are
@@ -31,7 +31,7 @@ File: records.info,  Node: Top,  Next: Location,  Prev: (dir),  Up: (dir)
 Introduction
 ************
 
-   The *records-mode* for emacs allows creation of an online diary.
+   The _records-mode_ for emacs allows creation of an online diary.
 Users can create records in their diary for different subjects each
 day. Records provides linking and indexing facilities so that users can
 easily collect their thoughts on a subject over a period of time. For
@@ -85,7 +85,7 @@ will be automatically loaded.
 
   1. Since you are reading this file, you have untarred the gzip'ed
      file. The elisp files in the current directory (in which you are
-     right now) will *not* be installed in any other directory, and
+     right now) will _not_ be installed in any other directory, and
      installation will automatically add the current directory to the
      load path in emacs. So if you wish to move the records software to
      some other emacs-related directory, now is the time to do it.
@@ -93,7 +93,8 @@ will be automatically loaded.
   2. Run `./configure' or `./configure --enable-xemacs'
 
      The `--enable-xemacs' flag ensures that the elisp files are
-     compiled using `xemacs'. Use this option if you use `xemacs'.
+     compiled using `xemacs'. You MUST use this option if you use
+     `xemacs'.
 
      The configure is provided in the source directory (do not run your
      own configure).  If you want to specify the directory in which
@@ -154,7 +155,7 @@ will be automatically loaded.
      (define-key global-map [?\C-x ?n ?t] 'records-goto-today)
      (define-key global-map [?\C-x ?n ?r] 'records-insert-record-region)
      (define-key global-map [?\C-x ?n ?b] 'records-insert-record-buffer)
-     (define-key global-map [?\C-x ?n ?f] 'records-insert-file-link)
+     (define-key global-map [?\C-x ?n ?l] 'records-insert-link)
      
      ; Hook up to the calendar mode
      (add-hook 'calendar-load-hook
@@ -270,17 +271,19 @@ documentation. Hope to start experiments tomorrow.
 "
 
    The records subject is `Work'. A subject starts with an asterisk and
-a space and is always underlined. If the variable `records-fontify' is
-set to true (the default), the subject appears in a bold font (user
-variable `records-bold-font'). If the variable
+a space and is always underlined. Below the underlining, a link
+identifies the record. The link above shows that this record is
+associated with the date April 21st, 1999. Note that there are many ways
+in which dates can be represented in records (*note Records
+Administration::.).
+
+   If the variable `records-mode-use-font-lock' is set to true (the
+default), the subject, records link and the TODO (*note Organizing your
+TODOs::.) are fontified. You can modify the fontification by changing
+the variable `records-mode-font-lock-keywords'. If the variable
 `records-subject-read-only' is set to true (the default), the subject
 is read-only, which disallows any accidental updates to a records
 subject.
-
-   Below the underlining, a link identifies the record. The link above
-shows that this record is associated with the date April 21st, 1999.
-Note that there are many ways in which dates can be represented in
-records (*note Records Administration::.).
 
 
 File: records.info,  Node: Record File,  Next: Record Traversal,  Prev: What is a Record,  Up: Basic Use
@@ -342,18 +345,20 @@ Records allows traversing records within a record file and across files.
      a record file does not exist, one will be created.
 
 `records-goto-link'
-     Key `C-c C-g'. Goto the link around point in the records file. A
-     link in a records file must be enclosed within `<' and `>'. This
-     link can be a records link or a web link such as an http, FTP,
-     gopher link. For instance, <http://www.yahoo.com>. A records link
-     identifies a record (*note What is a Record::.). This record
-     identifier can be copied to any other record and this function
-     used to jump back to the record associated with the link.  For
-     instance, if you copied this link <../../99/04/042199#* Work> into
-     some other record and then typed `C-c C-g' within the angle
-     brackets, you would be transported to the `Work' record of April
-     21st, 1999. When the link is a web link, the link is handed off to
-     `browse-url-browser-function'.
+     Key `C-c C-g'. Key `Button2'. Goto the link around point in the
+     records file. A link in a records file must be enclosed within `<'
+     and `>'. This link can be a records link or a web link such as an
+     http, FTP, gopher, news message link. For instance,
+     <http://www.yahoo.com>. A records link identifies a record (*note
+     What is a Record::.). This record identifier can be copied to any
+     other record and this function used to jump back to the record
+     associated with the link.  For instance, if you copied this link
+     <../../99/04/042199#* Work> into some other record and then typed
+     `C-c C-g' within the angle brackets, you would be transported to
+     the `Work' record of April 21st, 1999. When the link is a web
+     link, the link is handed off to `browse-url-browser-function'.
+     When the link is a news message link, `deja.com' is searched for
+     the news message.
 
      Note that C-g can be typed only after sometime has elapsed after
      typing C-c or else the command gets aborted because of the
@@ -453,12 +458,14 @@ Miscellaneous Commands
      Key `C-x n b' Insert the current buffer into today's record.
      Prompts for subject.
 
-`records-insert-file-link'
-     Key `C-x n f' Write the current buffer file name as a records link
-     at the end of today's record and inserts a user-specified comment.
-     This function can be used to bookmark files in your records file.
-     Currently, this function is not bound to any key. You should bind
-     it to a global key.
+`records-insert-link'
+     Key `C-x n l' Writes the file name of the current buffer, or the
+     url of the current page, or the message-id of the current gnus
+     buffer as a records link at the end of today's record and inserts
+     a user-specified comment. This function can be used to bookmark
+     files, urls or news messages in your records file. Currently, this
+     function is not bound to any key. You should bind it to a global
+     key. This function used to be called records-insert-file-link.
 
 
 File: records.info,  Node: Records Administration,  Prev: Misc Commands,  Up: Basic Use
@@ -585,7 +592,12 @@ available with `xemacs'. Since the mailcrypt mode is not available with
 the directory `mailcrypt'. However, this directory will probably not be
 in your load-path (*note (xemacs)Loading::).  So if you don't have
 these packages by default, copy the files in the `mailcrypt' directory
-into the top level records directory.
+into the top level records directory. The mailcrypt version is 3.5.5
+which supports PGP version 2.6, PGP version 5.0 and the GNU gpg.
+
+   By default PGP version 2.6 is used for encryption and decryption. You
+can set the value of the variable mc-default-scheme to mc-scheme-pgp50
+to enable PGP version 5.0.
 
    If you don't have PGP software then you either don't care about
 encryption or need to get it so you can use it with records.
@@ -670,7 +682,7 @@ File: records.info,  Node: Conclusion,  Next: Variable Index,  Prev: Advanced Us
 Conclusions and Acknowledgments
 *******************************
 
-   As promised, the *records-mode* for emacs allows creation of an
+   As promised, the _records-mode_ for emacs allows creation of an
 online diary with extensive linking and indexing facilities. This diary
 has in fact become my major desktop tool. I write most of my documents,
 small and large, as records distributed over different days and
@@ -706,7 +718,8 @@ Variable Index
 * records-date-prefix-on-concat:         Concatenating Records.
 * records-date-suffix-on-concat:         Concatenating Records.
 * records-erase-output-buffer:           Concatenating Records.
-* records-fontify:                       What is a Record.
+* records-mode-font-lock-keywords:       What is a Record.
+* records-mode-use-font-lock:            What is a Record.
 * records-output-buffer:                 Concatenating Records.
 * records-select-buffer-on-concat:       Concatenating Records.
 * records-subject-prefix-on-concat:      Concatenating Records.
@@ -751,7 +764,7 @@ Concept and Function Index
 * records-goto-prev-record-file:         Record Traversal.
 * records-goto-today:                    Record Traversal.
 * records-goto-up-record:                Record Traversal.
-* records-insert-file-link:              Misc Commands.
+* records-insert-link:                   Misc Commands.
 * records-insert-record:                 Manipulating Records.
 * records-insert-record-buffer:          Misc Commands.
 * records-insert-record-region:          Misc Commands.
@@ -773,12 +786,8 @@ Key Index
 
 * Menu:
 
+* Button2:                               Record Traversal.
 * C-c / c:                               Concatenating Records.
-* C-c / d:                               Security.
-* C-c / e:                               Security.
-* C-c / f:                               Concatenating Records.
-* C-c / g:                               Organizing your TODOs.
-* C-c / t:                               Organizing your TODOs.
 * C-c C-b:                               Record Traversal.
 * C-c C-c:                               Misc Commands.
 * C-c C-d:                               Manipulating Records.
@@ -796,34 +805,42 @@ Key Index
 * C-c C-s:                               Record Traversal.
 * C-c C-t:                               Record Traversal.
 * C-c C-y:                               Record Traversal.
+* C-c / d:                               Security.
+* C-c / e:                               Security.
+* C-c / f:                               Concatenating Records.
+* C-c / g:                               Organizing your TODOs.
 * C-c n:                                 Record Traversal.
 * C-c return:                            Misc Commands.
+* C-c / t:                               Organizing your TODOs.
 * C-M-a:                                 Record Traversal.
 * C-M-e:                                 Record Traversal.
 * C-M-h:                                 Misc Commands.
+* C-x n b:                               Misc Commands.
+* C-x n l:                               Misc Commands.
+* C-x n r:                               Misc Commands.
 
 
 
 Tag Table:
-Node: Top1189
-Node: Location2350
-Node: Installation2574
-Node: Tutorial7785
-Node: Basic Use9841
-Node: What is a Record10436
-Node: Record File11659
-Node: Record Traversal12013
-Node: Records Index File15468
-Node: Manipulating Records16317
-Node: Misc Commands17439
-Node: Records Administration19024
-Node: Advanced Use20037
-Node: Organizing your TODOs20419
-Node: Security23261
-Node: Concatenating Records24768
-Node: Conclusion27314
-Node: Variable Index28648
-Node: Concept Index29858
-Node: Key Index32120
+Node: Top1165
+Node: Location2326
+Node: Installation2550
+Node: Tutorial7770
+Node: Basic Use9826
+Node: What is a Record10421
+Node: Record File11763
+Node: Record Traversal12117
+Node: Records Index File15694
+Node: Manipulating Records16543
+Node: Misc Commands17665
+Node: Records Administration19422
+Node: Advanced Use20435
+Node: Organizing your TODOs20817
+Node: Security23659
+Node: Concatenating Records25434
+Node: Conclusion27980
+Node: Variable Index29314
+Node: Concept Index30583
+Node: Key Index32845
 
 End Tag Table

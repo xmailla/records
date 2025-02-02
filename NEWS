@@ -1,3 +1,18 @@
+Version 1.4.7 (not yet released)
+        Clicking with the middle button on a records link invokes
+          records-goto-link
+
+        Enabled font-lock support instead of using home-grown fontification,
+          code by Robert Mihram. records-bold-face not used anymore. See
+          records-mode-use-font-lock and records-mode-font-lock-keywords. 
+        Renamed records-insert-file-link to records-insert-link. This function
+          will now also insert urls and news message ids.
+        records-goto-link will follow message ids to jump to news messages 
+          on deja.com.
+        Added support for PGP version 5.0 for encrypting and decrypting
+          records. Users must set mc-default-scheme. Look at the mailcrypt
+          package.
+
 Version 1.4.6
         Fixed a Y2K bug when years were specified in 2 digits!
         Added functionality so that records of the same subject can be 
