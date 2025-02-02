@@ -1,7 +1,7 @@
 ;;;
 ;;; records-index.el
 ;;;
-;;; $Id: records-index.el,v 1.13 2000/01/18 11:27:39 ashvin Exp $
+;;; $Id: records-index.el,v 1.14 2000/04/17 21:09:30 ashvin Exp $
 ;;;
 ;;; Copyright (C) 1996 by Ashvin Goel
 ;;;
@@ -93,7 +93,7 @@ If modified is t, check the file modification time since being visited."
 	  ;; create records directory 
 	  (make-directory (expand-file-name records-directory) t))
       ;; initialize records index file
-      (write-region "-*- records-index -*-" nil records-index-file))
+      (write-region "-*- records-index -*-\n" nil records-index-file))
     ;; now get the index file
     (setq records-index-buffer (buffer-name 
 			      (find-file-noselect records-index-file)))))
@@ -125,8 +125,8 @@ place point at the beginning of the next subject."
   (if (re-search-forward (records-index-subject-regexp subject) (point-max) t)
       (goto-char (match-beginning 0))
     (if (null no-error)
-	(error 
-	 (concat "records-index-goto-subject: subject " subject " not found.")))
+	(error (concat "records-index-goto-subject: subject " subject 
+                       " not found.")))
     ;; search linearly until we get the next subject
     (while (let (match) ;; a do-while loop
 	     (forward-line 1)

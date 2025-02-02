@@ -1,23 +1,26 @@
 ;;;
 ;;; records.el
 ;;;
-;;; $Id: records.el,v 1.33 2000/01/31 21:23:09 ashvin Exp $
+;;; $Id: records.el,v 1.35 2001/04/11 18:14:12 ashvin Exp $
 ;;;
-;;; Copyright (C) 1996 by Ashvin Goel
+;;; Copyright (C) 1996-2000 by Ashvin Goel
 ;;;
 ;;; This file is under the Gnu Public License.
 
 (require 'records-vars)
 (require 'records-index)
 (require 'records-dindex)
-(require 'records-util)
-(require 'records-search)
+(require 'records-autoloads)
+;; (require 'records-util)
+;; (require 'records-search)
+;; (require 'records-tex)
+;; (require 'records-w3)
 
 ;;;
 ;;; Internal variables - users shouldn't change
 ;;; The defvar is for internal documentation.
 ;;;
-(defconst records-version "1.4.8")
+(defvar records-version "1.4.9" "Records version")
 
 (defvar records-mode-menu-map nil
   "Records Menu Map. Internal variable.")
@@ -65,6 +68,13 @@ to records-goto-record. Internal variable.")
 (defvar records-initialize nil
   "Has function records-initialize been invoked atleast once.
 Internal variable.")
+
+(if running-xemacs
+    (progn
+      (setq records-mouse-2 [(button2)])
+      (setq records-mouse-3 [(button3)]))
+  (setq records-mouse-2 [(mouse-2)])
+  (setq records-mouse-3 [(mouse-3)]))
 
 ;;;###autoload
 (defun records-initialize ()
@@ -324,15 +334,24 @@ insertion of any character automatically inserts a newline also. TODO"
     (if (not running-xemacs)
         ;; emacs has an of-by-one error
         (setq end (1- end)))
-    (add-text-properties beg end '(start-open t))
-    (if records-subject-read-only
-        (add-text-properties beg end '(read-only records-subject)))))
+    ;; The inhibit-read-only value is set so that records-mode can be called
+    ;; more than once on the same buffer (this is needed in gnuemacs when
+    ;; using records-widen-latex).
+    (let ((inhibit-read-only '(records-subject)))
+      (add-text-properties beg end '(start-open t))
+      (if records-subject-read-only
+          (add-text-properties beg end '(read-only records-subject))))))
 
 (defun records-remove-text-properties (s) 
   "Remove the text properties of string in a record.
 Called when killing a region in records mode."
   ;; length is probably going to be slow
   (remove-text-properties 0 (length s) '(face nil read-only nil) s))
+
+(defun records-remove-read-only-property ()
+  "Remove the read only properties from the entire records buffer."
+  (remove-text-properties (point-min) (1- (point-max)) '(read-only nil))
+  )
 
 (defun records-parse-buffer ()
   "Parses the records buffer and fontifies record subjects etc."
@@ -439,11 +458,11 @@ point. Note, that the point and the mark in the buffer are not affected."
       (and (looking-at "\\s-*")
            (eq (match-end 0) (second point-pair))))))
 
-(defun records-link ()
+(defun records-subject-link ()
   "Returns the records link of the record around the current point."
   (save-excursion
     (if (null (records-goto-subject))
-	(error "records-link: no subject found."))
+	(error "records-subject-link: no subject found."))
     (next-line 2)
     (beginning-of-line)
     (if (looking-at "link: \\(<.*>\\)")
@@ -453,7 +472,7 @@ point. Note, that the point and the mark in the buffer are not affected."
   "Put the records link of the record around the current point in the kill
 ring."
   (interactive)
-  (kill-new (records-link)))
+  (kill-new (records-subject-link)))
 
 (defun records-make-record (subject date tag &optional record-body)
   "Make a basic record with it's link name." 
@@ -465,7 +484,9 @@ ring."
     (insert (concat "\n" (records-make-link subject date tag) "\n"))
     (records-add-text-properties opoint (point))
     (if record-body
-	(insert record-body))))
+	(insert record-body))
+    (run-hooks 'records-make-record-hook)
+    ))
 
 (defun records-free-record (&optional keep-body)
   "Remove the current record. 
@@ -498,6 +519,17 @@ With arg., keep the body and remove the subject only."
       (insert "\n" (buffer-substring bol bospaces))
       (insert-char ?- (- eol bospaces)))))
 
+;;; TODO: can this function be made tighter?
+(defun records-on-records-link ()
+  "Is the point on a records link?"
+  (save-excursion
+    (let ((cpoint (point)))
+      (if (and (or (looking-at "<")
+                   (re-search-backward "<" (point-boln) t))
+               (progn (goto-char cpoint)
+                      (re-search-forward ">" (point-eoln) t)))
+          t nil))))
+
 ;; 04/13/1999: http, ftp, mailto and gopher handling code
 ;;             Thanks to Kaarthik Sivakumar
 ;; 01/10/2000: dejanews handling code
@@ -523,8 +555,14 @@ A tag is a number.
 	(error "records-goto-link: invalid link under point."))
     ;; try to figure out a link
     (cond 
+     ;; using HTML to markup links
+     ((looking-at "<a href=\"\\([^\"]+\\)\">") ; from John Wiegley
+      (funcall browse-url-browser-function 
+               (buffer-substring-no-properties (match-beginning 1) 
+					       (match-end 1))))
+     ;; using records style to markup links
      ((looking-at (concat "<\\(.*\\)/\\([^/#]+\\)\\(" records-tag-regexp 
-                          "\\* \\(.*\\)\\|\\)>")) 
+                          "\\* \\(.*\\)\\|\\)>"))
       ;; found a link
       (let ((dir (buffer-substring-no-properties (match-beginning 1) 
                                                  (match-end 1)))
@@ -543,11 +581,15 @@ A tag is a number.
          ;; at the beginning of dir, strip it ... guess why?
          (t (if (string-match "^file://\\(localhost\\|\\)" dir)
                 (setq dir (substring dir (match-end 0))))
+            ;; TODO: the next line should be pulled outside save-excursion 
+            ;;       or else links in the same buffer don't work
             (records-goto-record subject date tag nil nil nil nil dir)))))
+     ;; for various other links
      ((looking-at "<\\(\\(http\\|mailto\\|ftp\\|gopher\\):[^>]+\\)>")
       (funcall browse-url-browser-function 
                (buffer-substring-no-properties (match-beginning 1) 
 					       (match-end 1))))
+     ;; use dejanews for news links
      ((looking-at "<\\([^ \t\n>]+\\)>")
       (funcall browse-url-browser-function 
 	       (concat
@@ -561,11 +603,17 @@ A tag is a number.
   "When mouse is clicked on a link, goto the link. 
 When mouse is clicked anywhere else, invoke the default mouse binding."
   (interactive "e")
-  (condition-case nil
-      (progn (mouse-set-point e)
-             (records-goto-link))
-    (error (funcall (global-key-binding [(button2)]) e)))
-  )
+  (mouse-set-point e) ;; TODO: we shouldn't really be setting the point
+  (if (records-on-records-link)
+      (records-goto-link)
+    (let* ((key (where-is-internal 'records-goto-mouse-link nil t))
+           (func  (global-key-binding (if key key records-mouse-2))))
+      ;; The default mouse binding in emacs and xemacs are functions 
+      ;; that take different number of arguments!!!
+      (condition-case nil
+          (funcall func e) ; assume func takes one arg
+        (error (funcall func e nil))) ; handle two args
+      )))
 
 (defun records-goto-record (subject date tag 
 				&optional no-hist no-switch todo no-error dir)
@@ -665,7 +713,7 @@ Returns the new (date, tag) if found."
 	(setq date (records-file-to-date))))
   (if (records-index-goto-subject subject (interactive-p) no-error)
       (records-index-goto-relative-date-tag arg date tag)))
-  
+
 (defun records-goto-relative-day (&optional arg no-switch todo)
   "With positive arg, go arg days ahead of current record's date. 
 With negative arg, go arg days behind current record's date.
@@ -882,6 +930,23 @@ With arg, removes the subject only."
       (records-insert-record subject record-body)))
   (records-delete-record nil t))
 
+(defun records-popup-mode-menu (e)
+  "When mouse is clicked on a link, popup a link-specific menu. 
+When mouse is clicked anywhere else, invoke the default popup menu."
+  (interactive "e")
+  (mouse-set-point e)
+  (let ((menu-map (if (records-on-records-link) records-link-menu-map 
+                    records-mode-menu-map))
+        menu-item)
+    (if (fboundp 'popup-menu)
+        (popup-menu menu-map) ;; life is easy with xemacs
+      (if (not running-xemacs)
+          (progn (setq menu-item (x-popup-menu t menu-map))
+                 (if menu-item ;; a menu item has been chosen
+                     (call-interactively 
+                      (lookup-key menu-map 
+                                  (apply 'vector menu-item)))))))))
+
 (define-derived-mode records-mode text-mode "Records"
   "Enable records-mode for a buffer. Currently, the documentation of this 
 mode exists in three places: the INSTALL and README files and the menubar!
@@ -920,15 +985,24 @@ The key-bindings of this mode are:
   (define-key records-mode-map "\C-c\C-s" 'records-search-forward)
   (define-key records-mode-map "\C-c\C-r" 'records-search-backward)
 
-  (define-key records-mode-map [(button2)] 'records-goto-mouse-link)
+  (define-key records-mode-map records-mouse-2 'records-goto-mouse-link)
+  (define-key records-mode-map records-mouse-3 'records-popup-mode-menu)
 
   ;; utility functions have C-c/ prefix keys
   (define-key records-mode-map "\C-c/t" 'records-create-todo)
   (define-key records-mode-map "\C-c/g" 'records-get-todo)
   (define-key records-mode-map "\C-c/e" 'records-encrypt-record)
   (define-key records-mode-map "\C-c/d" 'records-decrypt-record)
-  (define-key records-mode-map "\C-c/c" 'records-concatenate-records)
-  (define-key records-mode-map "\C-c/f" 'records-concatenate-record-files)
+
+  (define-key records-mode-map "\C-c/l" 'records-narrow-latex)
+  (define-key records-mode-map "\C-c/o" 'records-outline-mode)
+
+  ;; latex functions with C-c+ prefix keys
+  (define-key records-mode-map "\C-c+c" 'records-concatenate-records)
+  (define-key records-mode-map "\C-c+l" 'records-concatenate-records-latex)
+  (define-key records-mode-map "\C-c+f" 'records-concatenate-record-files)
+  (define-key records-mode-map "\C-c+r" 
+    'records-concatenate-record-files-latex)
 
   (define-key records-mode-map "\C-c\C-c" 'records-goto-calendar)
   (define-key records-mode-map "\C-c\C-k" 'records-link-as-kill)
@@ -939,52 +1013,73 @@ The key-bindings of this mode are:
   (if records-mode-menu-map
       ()
     (setq records-mode-menu-map
-	  '(["Today's Record" records-goto-today t]
-	    "--"
-	    ["Insert Record" records-insert-record t]
-	    ["Delete Record" records-delete-record t]
-	    ["Rename Record" records-rename-record t]
-	    ["Move Record" records-move-record t]
-	    "--"
-	    ["Up Record" records-goto-up-record t]
-	    ["Down Record" records-goto-down-record t]
-	    "--"
-	    ["Prev Record" records-goto-prev-record t]
-	    ["Next Record" records-goto-next-record t]
-	    "--"
-	    ["Prev Record File" records-goto-prev-record-file t]
-	    ["Next Record File" records-goto-next-record-file t]
-	    "--"
-	    ["Prev Day" records-goto-prev-day t]
-	    ["Next Day" records-goto-next-day t]
-	    "--"
-	    ["Goto Records Link" records-goto-link t]
-	    ["Goto Last Record" records-goto-last-record t]
-	    ["Goto Index" records-goto-index t]
-	    "--"
+	  '("Records"
+            ["Today's Record" records-goto-today t]
+            "--"
+            ["Insert Record" records-insert-record t]
+            ["Delete Record" records-delete-record t]
+            ["Rename Record" records-rename-record t]
+            ["Move Record" records-move-record t]
+            "--"
+            ["Up Record" records-goto-up-record t]
+            ["Down Record" records-goto-down-record t]
+            "--"
+            ["Prev Record" records-goto-prev-record t]
+            ["Next Record" records-goto-next-record t]
+            "--"
+            ["Prev Record File" records-goto-prev-record-file t]
+            ["Next Record File" records-goto-next-record-file t]
+            "--"
+            ["Prev Day" records-goto-prev-day t]
+            ["Next Day" records-goto-next-day t]
+            "--"
+            ["Goto Records Link" records-goto-link t]
+            ["Goto Last Record" records-goto-last-record t]
+            ["Goto Index" records-goto-index t]
+            "--"
             ["Search Forward" records-search-forward t]
             ["Search Backward" records-search-backward t]
-	    "--"
-	    ["Create TODO" records-create-todo t]
-	    ["Get TODO's" records-get-todo t]
-	    ["Decrypt Record" records-decrypt-record t]
-	    ["Encrypt Record" records-encrypt-record t]
-	    ["Concat Records" records-concatenate-records t]
-	    ["Concat Record Files" records-concatenate-record-files t]
-	    "--"
-	    ["Goto Calendar" records-goto-calendar t]
-	    ["Mark Record"  records-mark-record t]
-	    ["Copy Records Link" records-link-as-kill t]
-	    ["Underline Line" records-underline-line t]
-	    "--"
-	    ["Re-Init Records" records-initialize t]
-	    ))
+            "--"
+            ["Create TODO" records-create-todo t]
+            ["Get TODO's" records-get-todo t]
+            ["Decrypt Record" records-decrypt-record t]
+            ["Encrypt Record" records-encrypt-record t]
+            ["Switch to LaTeX mode" records-narrow-latex t]
+            ["Toggle Outline mode" records-outline-mode t]
+            "--"
+            ;; records concatenate submenu
+            ("Concatenate Records"
+              ["Concat Records" records-concatenate-records t]
+              ["Concat Record (latex)" 
+               records-concatenate-records-latex t]
+              ["Concat Record Files" 
+               records-concatenate-record-files t]
+              ["Concat Record Files (latex)"
+               records-concatenate-record-files-latex t]
+              )
+            "--"
+            ["Goto Calendar" records-goto-calendar t]
+            ["Mark Record"  records-mark-record t]
+            ["Copy Records Link" records-link-as-kill t]
+            ["Underline Line" records-underline-line t]
+            "--"
+            ["Re-Init Records" records-initialize t]
+            ))
     (easy-menu-define records-mode-menu-map records-mode-map "Records" 
-                        (cons "Records" records-mode-menu-map))
+                      records-mode-menu-map)
+    (setq records-link-menu-map 
+          '("Records Link" 
+            ["Goto Link" records-goto-link]))
+    (easy-menu-define records-link-menu-map nil "Records Link" 
+                      records-link-menu-map)
     )
   (easy-menu-add records-mode-menu-map)
 
   ;; imenu stuff 
+  ;; using it in Xemacs:
+  ;; (define-key global-map [(shift button3)] 'imenu)
+  ;; using it in gnu emacs:
+  ;; (define-key global-map [(shift mouse-3)] 'imenu)
   (if (locate-library "imenu")
       (progn
 	(eval-when-compile (require 'imenu))
@@ -994,6 +1089,7 @@ The key-bindings of this mode are:
 	(setq imenu-extract-index-name-function 'records-subject-tag)))
 
   (records-parse-buffer)
+  (make-local-variable 'records-subject-read-only)
   (make-local-hook 'kill-hooks)
   (add-hook 'kill-hooks 'records-remove-text-properties nil t)
   (if records-initialize
@@ -1001,9 +1097,11 @@ The key-bindings of this mode are:
     (records-initialize)
     (setq records-initialize t))
   ;; fontification code by Robert Mihram
+  (if records-use-font-lock
+      (require 'font-lock))
   (if (and (or (not (boundp 'font-lock-auto-fontify)) 
                (not font-lock-auto-fontify))
-           records-mode-use-font-lock)
+           records-use-font-lock)
       (progn (eval-when-compile (require 'font-lock))
              (make-local-variable 'font-lock-defaults)
              (setq font-lock-defaults '(records-mode-font-lock-keywords))
@@ -1016,3 +1114,4 @@ The key-bindings of this mode are:
 
 (run-hooks 'records-load-hooks)
 (provide 'records)
+

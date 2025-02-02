@@ -1,4 +1,4 @@
-This is records.info, produced by Makeinfo version 3.12h from
+This is records.info, produced by makeinfo version 4.0 from
 ./records.texi.
 
 START-INFO-DIR-ENTRY
@@ -60,7 +60,9 @@ Where to get records
 
    You can get the latest version of records from
 
-`http://www.cse.ogi.edu/~ashvin/software.html'
+`http://www.cse.ogi.edu/~ashvin/software.html'. Soon this project will
+be migrating to `http://sourceforge.net'. Then the latest version will
+be available from `http://sourceforge.net/projects/records'.
 
 
 File: records.info,  Node: Installation,  Next: Tutorial,  Prev: Location,  Up: Top
@@ -90,7 +92,9 @@ will be automatically loaded.
      load path in emacs. So if you wish to move the records software to
      some other emacs-related directory, now is the time to do it.
 
-  2. Run `./configure' or `./configure --enable-xemacs'
+  2. If you are installing records on Windows, read INSTALL-NT first.
+
+  3. Run `./configure' or `./configure --enable-xemacs'
 
      The `--enable-xemacs' flag ensures that the elisp files are
      compiled using `xemacs'. You MUST use this option if you use
@@ -105,12 +109,15 @@ will be automatically loaded.
      Make sure `${bindir}' (generally `${prefix}/bin') in the Makefile
      exists and is writable by you.
 
-  3. Run `make install' (or just `make')
+     Note: if you are getting source from CVS, you will have to generate
+     `./configure' by running `autoconf' first.
+
+  4. Run `make install' (or just `make')
 
      Make compiles the lisp files and then interactively asks for the
      user defaults. Note that the lisp files are not installed anywhere.
 
-  4. The changes to your system that `make install' does are the
+  5. The changes to your system that `make install' does are the
      following:
 
        1. Adds `~/.emacs-records' (if this file already exists, it
@@ -133,7 +140,7 @@ will be automatically loaded.
           conversion is not okay.
 
 
-  5. Copy the next set of lines from `;;;; records-mode' to `;;;;
+  6. Copy the next set of lines from `;;;; records-mode' to `;;;;
      records-mode end' into your `~/.emacs'. Make sure that these lines
      occur after the following line (which has been automatically added
      during install) in your `.emacs'.
@@ -164,6 +171,17 @@ will be automatically loaded.
      	     (define-key calendar-mode-map "n"
                    'records-calendar-to-record))))
      
+     ; Hook up to the latex mode
+     (add-hook 'LaTeX-mode-hook
+               (function
+                (lambda ()
+                  (define-key LaTeX-mode-map "\C-clw" 'records-widen-latex))))
+     
+     ; Hook to insert a template when a record is inserted.
+     ; See function records-insert-template
+     (add-hook 'records-make-record-hook
+               (function (lambda ()
+                           (records-insert-template current-prefix-arg))))
      ;;;*** OPTIONAL ***;;;
      
      ; If you like abbrev mode
@@ -172,18 +190,36 @@ will be automatically loaded.
           (lambda ()
             (abbrev-mode 1))))
      
+     ; If you like to use auto filling and/or filladapt modes while editing text.
+     ; If you have these functions in the text-mode-hook, then you don't need
+     ; them here.
+     (add-hook 'records-mode-hooks
+           (function (lambda ()
+                       (turn-on-auto-fill)
+                       (turn-on-filladapt-mode)
+                       )))
+     
+     ; If you want to always start up in outline mode
+     (add-hook 'records-mode-hooks 'records-outline-mode)
+     
+     ; Using imenu: imenu will invoke a popup menu of records subjects
+     ; 1. In Xemacs:
+     ; (define-key global-map [(shift button3)] 'imenu)
+     ; 2. In gnu emacs:
+     ; (define-key global-map [(shift mouse-3)] 'imenu)
+     
      ; If you want to be brought to today's record on startup
      (records-goto-today)
      
      ;;;; records-mode end
 
-  6. The installation is complete. Restart your emacs (ya, I know that
+  7. The installation is complete. Restart your emacs (ya, I know that
      you hate to restart emacs because it is your OS. Well you don't
      have to restart emacs if you know how to evaluate regions in a
      buffer. In this case, evaluate the key bindings and all the hooks
      defined above and load in `~/.emacs-records'). Now that the
      installation is complete, you are ready to start using records.
-     First, read the short tutorial (*note Tutorial::.) on getting
+     First, read the short tutorial (*note Tutorial::) on getting
      started.
 
 
@@ -216,13 +252,13 @@ A Real Quick Tutorial
      goto etc). The middle section adds, deletes and renames records.
      The last section does administration tasks such as encryption,
      concatenation of records by subject or days, etc. Make sure you
-     look at the records TODO facility (*note Organizing your TODOs::.).
+     look at the records TODO facility (*note Organizing your TODOs::).
 
   5. Remember that if you just have one record file (today's) then
      records traversal's are not very useful!
 
-  6.  The program `recordsadmin' has been provided in the distribution
-     in order to administer your records. You should not need to use
+  6. The program `recordsadmin' has been provided in the distribution in
+     order to administer your records. You should not need to use
      `recordsadmin' in normal records use. `recordsadmin' 1) performs
      initialization (or re-initialization) of your records software, 2)
      allows changing the date format, 3) changing the directory
@@ -275,12 +311,12 @@ a space and is always underlined. Below the underlining, a link
 identifies the record. The link above shows that this record is
 associated with the date April 21st, 1999. Note that there are many ways
 in which dates can be represented in records (*note Records
-Administration::.).
+Administration::).
 
-   If the variable `records-mode-use-font-lock' is set to true (the
+   If the variable `records-use-font-lock' is set to true (the
 default), the subject, records link and the TODO (*note Organizing your
-TODOs::.) are fontified. You can modify the fontification by changing
-the variable `records-mode-font-lock-keywords'. If the variable
+TODOs::) are fontified. You can modify the fontification by changing the
+variable `records-mode-font-lock-keywords'. If the variable
 `records-subject-read-only' is set to true (the default), the subject
 is read-only, which disallows any accidental updates to a records
 subject.
@@ -345,25 +381,30 @@ Records allows traversing records within a record file and across files.
      a record file does not exist, one will be created.
 
 `records-goto-link'
-     Key `C-c C-g'. Key `Button2'. Goto the link around point in the
-     records file. A link in a records file must be enclosed within `<'
-     and `>'. This link can be a records link or a web link such as an
-     http, FTP, gopher, news message link. For instance,
-     <http://www.yahoo.com>. A records link identifies a record (*note
-     What is a Record::.). This record identifier can be copied to any
-     other record and this function used to jump back to the record
-     associated with the link.  For instance, if you copied this link
-     <../../99/04/042199#* Work> into some other record and then typed
-     `C-c C-g' within the angle brackets, you would be transported to
-     the `Work' record of April 21st, 1999. When the link is a web
-     link, the link is handed off to `browse-url-browser-function'.
-     When the link is a news message link, `deja.com' is searched for
-     the news message.
+     Key `C-c C-g'. Goto the link around point in the records file. A
+     link in a records file must be enclosed within `<' and `>'. This
+     link can be a records link or a web link such as an http, FTP,
+     gopher, news message link. It can also be an html link like `<a
+     href=http://www.yahoo.com>' or `<http://www.yahoo.com>'. A records
+     link identifies a record (*note What is a Record::). This record
+     identifier can be copied to any other record and this function
+     used to jump back to the record associated with the link.  For
+     instance, if you copied this link `<../../99/04/042199#* Work>'
+     into some other record and then typed `C-c C-g' within the angle
+     brackets, you would be transported to the `Work' record of April
+     21st, 1999. When the link is a web link, the link is handed off to
+     `browse-url-browser-function'. When the link is a news message
+     link, `deja.com' is searched for the news message.
 
      Note that C-g can be typed only after sometime has elapsed after
      typing C-c or else the command gets aborted because of the
      behavior of C-g. This is either an emacs bug or this binding ought
      to be changed.
+
+`records-goto-mouse-link'
+     Key `Button2'. When mouse is clicked on a link, goto the link. See
+     `records-goto-link' for more details. When mouse is clicked
+     anywhere else, invoke the default mouse binding.
 
 `records-goto-last-record'
      Key `C-c C-l'. Go back to the last record file visited. Identical
@@ -408,6 +449,18 @@ Adding, Deleting and Renaming Records
      Interactively asks for the subject. Subject completion is
      available with the <TAB> key.
 
+     You can insert templates when a new record is inserted. Look at the
+     online documentation of the `records-insert-template' function and
+     the `records-template-alist' variable. From Rob Tillotson, the
+     author of the template code:
+          In essence, with templates, records becomes a sort of ad-hoc
+          database of journals, bibliographic information, contact
+          logs, and all kinds of other random stuff. There might be
+          advantages to keeping this kind of stuff in an SQL server or
+          something, but records is convenient and easily greppable and
+          doesn't require me to screw around with building databases
+          (if I need to add a field, I can just type it in)...
+
 `records-delete-record'
      Key `C-c C-d'. Delete the current record for the current date.
      With argument, removes the subject only, so the body is preserved.
@@ -430,6 +483,13 @@ File: records.info,  Node: Misc Commands,  Next: Records Administration,  Prev: 
 Miscellaneous Commands
 ======================
 
+`records-popup-mode-menu'
+     Key `Button3'. When mouse is clicked on a link, popup a
+     link-specific menu.  When mouse is clicked anywhere else, invoke
+     the default popup menu.
+
+`records-outline-mode'
+
 `records-goto-calendar'
      Key `C-c C-c'. Goto the emacs calendar with the cursor on the date
      in the current record file.
@@ -446,9 +506,9 @@ Miscellaneous Commands
      other record.
 
 `records-underline-line'
-     Key `C-c return'. Underline the current line to the length of the
-     line. This function is not really specific to records. You can use
-     it to underline any text.
+     Key `C-c -'. Underline the current line to the length of the line.
+     This function is not really specific to records. You can use it to
+     underline any text.
 
 `records-insert-record-region'
      Key `C-x n r' Insert the region in the current buffer into today's
@@ -506,6 +566,8 @@ Advanced Use
 * Organizing your TODOs::       Add TODO's to your records.
 * Security::                    Securing records with encryption.
 * Concatenating Records::       Collecting your past records together.
+* Editing In LaTeX mode::       Editing Records In LaTeX mode.
+* Editing In Outline mode::     Editing Records In Outline minor mode.
 
 
 File: records.info,  Node: Organizing your TODOs,  Next: Security,  Prev: Advanced Use,  Up: Advanced Use
@@ -554,14 +616,13 @@ the subject. You can explicitly move TODOs with the function
 default value of records-todo-end-regexp is "END_TODO". The comment
 added by `records-create-todo' is just part of the TODO text and can be
 removed.You can change these regexps if you like. Use `C-h v' to
-examine the values of these variables. You can have also have multiple
-TODOs within a record. If you want a todo to be copied instead of
-moved, then use CTODO, instead of TODO. Look at
-`records-todo-begin-copy-regexp'.  NOTE: the value of
-`records-todo-begin-move-regexp, records-todo-begin-copy-regexp,
-records-todo-end-regexp' has changed after records version 1.3. In fact,
-these variable are no longer regexps. So if you have changed them,
-beware.
+examine the values of these variables. You can also have multiple TODOs
+within a record. If you want a todo to be copied instead of moved, then
+use CTODO, instead of TODO. Look at `records-todo-begin-copy-regexp'.
+NOTE: the value of `records-todo-begin-move-regexp,
+records-todo-begin-copy-regexp, records-todo-end-regexp' has changed
+after records version 1.3. In fact, these variable are no longer
+regexps. So if you have changed them, beware.
 
    The variable `records-todo-today' determines whether
 `records-goto-today' will do TODO processing. If set to true (the
@@ -584,7 +645,7 @@ Securing Records With Encryption
 ================================
 
    Consider the `Work' record of April 21st, 1999 (*note What is a
-Record::.). That is a record I do not want my advisor to see! In
+Record::). That is a record I do not want my advisor to see! In
 records-mode, records can be individually encrypted (and signed) using
 Philip Zimmerman's PGP (Pretty Good Privacy) and the PGP mailcrypt mode
 available with `xemacs'. Since the mailcrypt mode is not available with
@@ -615,7 +676,7 @@ encryption or need to get it so you can use it with records.
      (*note (mailcrypt)Passphrase Cache::).
 
 
-File: records.info,  Node: Concatenating Records,  Prev: Security,  Up: Advanced Use
+File: records.info,  Node: Concatenating Records,  Next: Editing In LaTeX mode,  Prev: Security,  Up: Advanced Use
 
 Putting Records Together
 ========================
@@ -632,23 +693,50 @@ using this software!
 Both are concatenated in date order.
 
 `records-concatenate-records'
-     Key `C-c / c'. Concatenate the current record with the records on
+     Key `C-c + c'. Concatenate the current record with the records on
      the same subject written in the last NUM days. Output these
      records in the records output buffer. The name of this buffer is
      contained in the variable `records-output-buffer'. Without prefix
      argument, prompts for number of days.  An empty string will output
      the current record only. A negative number will output all the
-     past records on the subject!
+     past records on the subject! Normally, the records are output in
+     most-recent first order. This function asks the user if the order
+     should be reversed.
+
+`records-concatenate-records-latex'
+     Key `C-c + l'. Concatenate the current record with the records on
+     the same subject written in the last NUM days. Output these
+     records in latex format in the records latex output buffer. The
+     name of this buffer is contained in the variable
+     `records-latex-output-buffer'. Then run latex on the output.
+     Without prefix argument, prompts for number of days.  An empty
+     string will output the current record only. A negative number will
+     output all the past records on the subject!  Normally, the records
+     are output in most-recent first order. This function asks the user
+     if the order should be reversed.
 
 `records-concatenate-record-files'
-     Key `C-c / f'. Concatenate all the records in the records files of
+     Key `C-c + f'. Concatenate all the records in the records files of
      the last NUM days.  All the records of a subject are collected
      together. Output these records in the records output buffer (see
      above). Without prefix argument, the function prompts for the
      number of days. An empty string will output the records of the
      current file.
 
+`records-concatenate-record-files-latex'
+     Key `C-c + r'. Concatenate all the records in the records files of
+     the last NUM days.  All the records of a subject are collected
+     together. Output these records in latex format in the records latex
+     output buffer (see above). Without prefix argument, the function
+     prompts for the number of days. An empty string will output the
+     records of the current file. This function is not implemented
+     currently.
+
    The records-mode concatenation related variables are shown below.
+
+`records-output-buffer'
+     Contains the output of concatenating records. By default,
+     "*RECORDS-OUTPUT*".
 
 `records-subject-prefix-on-concat'
      Prefix prepended to each subject on records concatenation. By
@@ -675,6 +763,58 @@ Both are concatenated in date order.
      If non nil, the records-output-buffer is erased, every time the
      concatenation functions are invoked.  If nil, the output is
      appended. By default, nil.
+
+`records-latex-output-buffer'
+     Contains the output of concatenating records in latex format. By
+     default, "*RECORDS-LATEX-OUTPUT*".
+
+`records-tex-directory'
+     Location of latex template for records. By default,
+     "RECORDS-DIRECTORY/tex/".
+
+`records-tex-template-plain'
+     Location of plain template for LaTeX'ing records. By default,
+     "RECORDS-DIRECTORY/tex/records-templ.tex".
+
+`records-tex-temp-output-file'
+     Output location for Latex runs. By default,
+     "RECORDS-DIRECTORY/tex/records-temp.tex".
+
+
+File: records.info,  Node: Editing In LaTeX mode,  Next: Editing In Outline mode,  Prev: Concatenating Records,  Up: Advanced Use
+
+Editing Records In LaTeX mode
+=============================
+
+   Records can be edited in LaTeX mode for those who insist on writing
+everything in this arcane language! The latex mode can be invoked in
+each record by calling `records-narrow-latex'. The record changes all
+links and TODOs to latex compatible environments. To get out of latex
+mode, use `records-widen-latex'.
+
+`records-narrow-latex'
+     Key `C-c / l'. Narrow records-file buffer to the current record and
+     switch to latex-mode.
+
+`records-widen-latex'
+     Widen records-file buffer and switch from latex to records-mode.
+     This key is not bound by default since the buffer is now in LaTeX
+     mode. You will have to invoke this function in the minibuffer (`M-x
+     records-widen-latex') to come back to records mode. Or else you
+     can bind the key `C-c l w' to this function in LaTeX mode as shown
+     in the installation section (*note Installation::).
+
+
+File: records.info,  Node: Editing In Outline mode,  Prev: Editing In LaTeX mode,  Up: Advanced Use
+
+Editing Records In Outline mode
+===============================
+
+   Records can be edited in Outline mode. The outline minor mode is
+toggled by calling `records-ouline-mode'.
+
+`records-ouline-mode'
+     Key `C-c / o'.
 
 
 File: records.info,  Node: Conclusion,  Next: Variable Index,  Prev: Advanced Use,  Up: Top
@@ -703,8 +843,8 @@ daily) and I found that inconvenient.
    Kaarthik Sivakumar <sivakuma@mail.eecis.udel.edu> insisted on
 documentation and that forced me to write the info pages.
 
-   Please send me mail at <ashvin@cse.ogi.edu> if you find this
-software useful.
+   Please send me mail at <ashvin@users.sourceforge.net> if you find
+this software useful.
 
 
 File: records.info,  Node: Variable Index,  Next: Concept Index,  Prev: Conclusion,  Up: Top
@@ -718,13 +858,16 @@ Variable Index
 * records-date-prefix-on-concat:         Concatenating Records.
 * records-date-suffix-on-concat:         Concatenating Records.
 * records-erase-output-buffer:           Concatenating Records.
+* records-latex-output-buffer:           Concatenating Records.
 * records-mode-font-lock-keywords:       What is a Record.
-* records-mode-use-font-lock:            What is a Record.
 * records-output-buffer:                 Concatenating Records.
 * records-select-buffer-on-concat:       Concatenating Records.
 * records-subject-prefix-on-concat:      Concatenating Records.
 * records-subject-read-only:             What is a Record.
 * records-subject-suffix-on-concat:      Concatenating Records.
+* records-tex-directory:                 Concatenating Records.
+* records-tex-temp-output-file:          Concatenating Records.
+* records-tex-template-plain:            Concatenating Records.
 * records-todo-begin-copy-regexp:        Organizing your TODOs.
 * records-todo-begin-move-regexp:        Organizing your TODOs.
 * records-todo-delete-empty-record:      Organizing your TODOs.
@@ -732,6 +875,7 @@ Variable Index
 * records-todo-next-day:                 Organizing your TODOs.
 * records-todo-prev-day:                 Organizing your TODOs.
 * records-todo-today:                    Organizing your TODOs.
+* records-use-font-lock:                 What is a Record.
 
 
 File: records.info,  Node: Concept Index,  Next: Key Index,  Prev: Variable Index,  Up: Top
@@ -745,7 +889,9 @@ Concept and Function Index
 * Installation:                          Installation.
 * Location:                              Location.
 * records-concatenate-record-files:      Concatenating Records.
+* records-concatenate-record-files-latex: Concatenating Records.
 * records-concatenate-records:           Concatenating Records.
+* records-concatenate-records-latex:     Concatenating Records.
 * records-create-todo:                   Organizing your TODOs.
 * records-decrypt-record:                Security.
 * records-delete-record:                 Manipulating Records.
@@ -756,6 +902,7 @@ Concept and Function Index
 * records-goto-index:                    Records Index File.
 * records-goto-last-record:              Record Traversal.
 * records-goto-link:                     Record Traversal.
+* records-goto-mouse-link:               Record Traversal.
 * records-goto-next-day:                 Record Traversal.
 * records-goto-next-record:              Record Traversal.
 * records-goto-next-record-file:         Record Traversal.
@@ -771,10 +918,15 @@ Concept and Function Index
 * records-link-as-kill:                  Misc Commands.
 * records-mark-record:                   Misc Commands.
 * records-move-record:                   Manipulating Records.
+* records-narrow-latex:                  Editing In LaTeX mode.
+* records-ouline-mode:                   Editing In Outline mode.
+* records-outline-mode:                  Misc Commands.
+* records-popup-mode-menu:               Misc Commands.
 * records-rename-record:                 Manipulating Records.
 * records-search-backward:               Record Traversal.
 * records-search-forward:                Record Traversal.
 * records-underline-line:                Misc Commands.
+* records-widen-latex:                   Editing In LaTeX mode.
 * TODO:                                  Organizing your TODOs.
 * Tutorial:                              Tutorial.
 
@@ -787,7 +939,18 @@ Key Index
 * Menu:
 
 * Button2:                               Record Traversal.
-* C-c / c:                               Concatenating Records.
+* Button3:                               Misc Commands.
+* C-c + c:                               Concatenating Records.
+* C-c + f:                               Concatenating Records.
+* C-c + l:                               Concatenating Records.
+* C-c + r:                               Concatenating Records.
+* C-c -:                                 Misc Commands.
+* C-c / d:                               Security.
+* C-c / e:                               Security.
+* C-c / g:                               Organizing your TODOs.
+* C-c / l:                               Editing In LaTeX mode.
+* C-c / o:                               Editing In Outline mode.
+* C-c / t:                               Organizing your TODOs.
 * C-c C-b:                               Record Traversal.
 * C-c C-c:                               Misc Commands.
 * C-c C-d:                               Manipulating Records.
@@ -805,13 +968,7 @@ Key Index
 * C-c C-s:                               Record Traversal.
 * C-c C-t:                               Record Traversal.
 * C-c C-y:                               Record Traversal.
-* C-c / d:                               Security.
-* C-c / e:                               Security.
-* C-c / f:                               Concatenating Records.
-* C-c / g:                               Organizing your TODOs.
 * C-c n:                                 Record Traversal.
-* C-c return:                            Misc Commands.
-* C-c / t:                               Organizing your TODOs.
 * C-M-a:                                 Record Traversal.
 * C-M-e:                                 Record Traversal.
 * C-M-h:                                 Misc Commands.
@@ -822,25 +979,27 @@ Key Index
 
 
 Tag Table:
-Node: Top1165
-Node: Location2326
-Node: Installation2550
-Node: Tutorial7770
-Node: Basic Use9826
-Node: What is a Record10421
-Node: Record File11763
-Node: Record Traversal12117
-Node: Records Index File15694
-Node: Manipulating Records16543
-Node: Misc Commands17665
-Node: Records Administration19422
-Node: Advanced Use20435
-Node: Organizing your TODOs20817
-Node: Security23659
-Node: Concatenating Records25434
-Node: Conclusion27980
-Node: Variable Index29314
-Node: Concept Index30583
-Node: Key Index32845
+Node: Top1163
+Node: Location2324
+Node: Installation2704
+Node: Tutorial9295
+Node: Basic Use11349
+Node: What is a Record11944
+Node: Record File13279
+Node: Record Traversal13633
+Node: Records Index File17470
+Node: Manipulating Records18319
+Node: Misc Commands20170
+Node: Records Administration22133
+Node: Advanced Use23146
+Node: Organizing your TODOs23662
+Node: Security26498
+Node: Concatenating Records28272
+Node: Editing In LaTeX mode32781
+Node: Editing In Outline mode33848
+Node: Conclusion34170
+Node: Variable Index35514
+Node: Concept Index37039
+Node: Key Index39795
 
 End Tag Table

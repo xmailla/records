@@ -1,6 +1,8 @@
 Make sure that you read the README file first.
 
-1. Run ./configure or ./configure --enable-xemacs
+1. If you are installing records on Windows, read INSTALL-NT first.
+
+2. Run ./configure or ./configure --enable-xemacs
 
 The --enable-xemacs flag ensures that the elisp files are compiled using
 xemacs. You MUST use this option if you use xemacs.
@@ -14,11 +16,14 @@ be installed, you could say something like
 Make sure ${bindir} (generally ${prefix}/bin) in the Makefile exists and is
 writable by you.
 
-2. Run make install (or just make)
+Note: if you are getting source from CVS, you will have to generate
+./configure by running autoconf first.
+
+3. Run make install (or just make)
 After the lisp files have been compiled, this procedure is interactive and asks
 for user defaults. Note: The lisp files are not installed anywhere.
 
-3. The changes to your system that "make install" does are the following:
+4. The changes to your system that "make install" does are the following:
 
    a) Adds ~/.emacs-records (if this file already exists, it converts only
       specific parts of the file).
@@ -36,7 +41,7 @@ for user defaults. Note: The lisp files are not installed anywhere.
       look for the following: HAVE EMBEDDED LINKS IN YOUR RECORDS BEEN
       CONVERTED CORRECTLY. Please tell me if this conversion is not okay.
 
-4. Copy the next set of lines from 
+5. Copy the next set of lines from 
 ";;;; records-mode" to 
 ";;;; records-mode end" into your ~/.emacs. Make sure that these lines occur
 after the following line (which has been automatically added during install) in
@@ -65,23 +70,53 @@ often. Bind it to a simple key.
 	   (lambda ()
 	     (define-key calendar-mode-map "n" 'records-calendar-to-record))))
 
+; Hook up to the latex mode
+(add-hook 'LaTeX-mode-hook
+          (function
+           (lambda () 
+             (define-key LaTeX-mode-map "\C-clw" 'records-widen-latex))))
+
+; Hook to insert a template when a record is inserted.
+; See function records-insert-template
+(add-hook 'records-make-record-hook 
+          (function (lambda ()
+                      (records-insert-template current-prefix-arg))))
 ;;;*** OPTIONAL ***;;;
 
 ; If you like abbrev mode 
 (add-hook 'records-mode-hooks
-    (function
-     (lambda ()
-       (abbrev-mode 1))))
+          (function 
+           (lambda ()
+             (abbrev-mode 1))))
+
+; If you like to use auto filling and/or filladapt modes while editing text.
+; If you have these functions in the text-mode-hook, then you don't need 
+; them here. 
+(add-hook 'records-mode-hooks 
+      (function 
+       (lambda ()
+         (turn-on-auto-fill)
+         (turn-on-filladapt-mode)
+         )))
+
+; If you want to always start up in outline mode
+(add-hook 'records-mode-hooks 'records-outline-mode)
+
+; Using imenu: imenu will invoke a popup menu of records subjects
+; 1. In Xemacs:
+; (define-key global-map [(shift button3)] 'imenu)
+; 2. In gnu emacs:
+; (define-key global-map [(shift mouse-3)] 'imenu)
 
 ; If you want to be brought to today's record on startup
 (records-goto-today)
 
 ;;;; records-mode end
 
-5. Restart your emacs (unless you know how to evaluate regions in a buffer - in
+6. Restart your emacs (unless you know how to evaluate regions in a buffer - in
 which case get the key bindings and load in .emacs-records).
 
 After restarting emacs, go back to the README file for using records mode in
 emacs.  
 
-Ashvin Goel (ashvin@cse.ogi.edu)
+Ashvin Goel (ashvin@users.sourceforge.net)

@@ -1,0 +1,59 @@
+% Template file for typesetting records from records-mode
+\documentclass[10pt,twocolumn]{article}
+
+%Layout
+\usepackage[latin1]{inputenc}
+\usepackage{calc}
+\usepackage[left=1.5cm,right=2cm,top=1cm,bottom=2cm,nofoot]{geometry}
+%two-column: more space bw cols
+\addtolength{\columnsep}{1em}
+%no point in having oldstyle spacing here. raggedright useful.
+\frenchspacing
+%space between paragraphs fits plain text format better
+\setlength{\parskip}{1ex}
+
+%Cross-references
+\usepackage{hyperref}
+
+%Page style (could use fancy)
+\pagestyle{myheadings}
+\markright{\footnotesize Records printed \today}
+
+%New commands
+\newlength{\recordheaderwidth}
+\newcommand{\recordheader}[2]{
+  \noindent\hspace{-1em}
+  \raisebox{-2\baselineskip}[0pt][0pt]{%
+    \rule{\fboxrule}{2\baselineskip}}%
+  \hspace{-\fboxrule}%
+  \framebox[\recordheaderwidth][l]{\textsf{\textbf{#2}\hfill #1%
+      \rule[-1ex]{0pt}{\baselineskip}}}%adjust for same height of header
+  \vspace{2pt}%space before text begins
+      }
+
+\newcommand{\recordfooter}{%
+  \vspace{-.5\baselineskip}%
+  \par\noindent\hspace{-1em}%
+  \makebox[\recordheaderwidth+2pt][l]{%
+    \hfill\rule{5em}{\fboxrule}%
+    \raisebox{0pt}[0pt][0pt]{%
+      \rule{\fboxrule}{\baselineskip}}}}
+
+%record environment
+\newenvironment{record}[2]%
+{\par\vspace{\baselineskip}
+  \recordheader{#1}{#2}
+  \par\raggedright}%Somehow the raggedright is better here
+{\recordfooter}
+
+%todo environment
+\newenvironment{todo}[1]%
+{\par\noindent\textsf{\textit{Todo #1:}}}%
+{\par\hfill}
+
+\setlength{\recordheaderwidth}{\columnwidth+1em}
+
+\begin{document}
+
+%Document end is inserted in code
+%\end{document}

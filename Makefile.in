@@ -1,7 +1,7 @@
 ###
 ### Makefile.in
 ###
-### $Id: Makefile.in,v 1.10 2000/01/27 20:55:07 ashvin Exp $
+### $Id: Makefile.in,v 1.12 2001/04/11 18:14:12 ashvin Exp $
 ###
 ### Copyright (C) 1996 by Ashvin Goel
 ###
@@ -46,16 +46,16 @@ TAR=tar
 srcdir = @srcdir@
 VPATH = @srcdir@
 
-SOURCES = records-vars.el records-dindex.el records-index.el records-util.el records-search.el records.el
-OBJECTS = records-vars.elc records-dindex.elc records-index.elc records-util.elc records-search.elc records.elc
+SOURCES = records-autoloads.el records-dindex.el records-index.el records-search.el records-tex.el records-util.el records-vars.el records.el
+OBJECTS = records-autoloads.elc records-dindex.elc records-index.elc records-search.elc records-tex.elc records-util.elc records-vars.elc records.elc
 
 PRELOADS = -l records-load.el -l records-vars.el -l records.el
 EFLAGS =-batch -q -no-site-file $(PRELOADS)
 
-DISTFILES = $(SOURCES) FAQ INSTALL Makefile.in NEWS \
+DISTFILES = $(SOURCES) FAQ INSTALL INSTALL-NT Makefile.in NEWS \
 	README configure configure.in install-sh \
 	mkinstalldirs recordsadmin.in records-load.el \
-	records.info records.ps \
+	records-templ.tex records.info records.ps \
 	mailcrypt/FSF-timer.el mailcrypt/expect.el mailcrypt/mailcrypt.el \
 	mailcrypt/mc-gpg.el mailcrypt/mc-pgp.el mailcrypt/mc-pgp5.el \
 	mailcrypt/mc-remail.el mailcrypt/mc-setversion.el \
@@ -122,7 +122,7 @@ clean:
 
 distclean: clean
 	-rm -f *~ *.tar.gz
-	rm -f records.ps records.info 
+	rm -f recordsadmin records.ps records.info 
 	rm -f Makefile config.status config.cache config.log
 
 ${srcdir}/configure: configure.in
@@ -135,7 +135,7 @@ config.status: ${srcdir}/configure
 	./config.status --recheck
 
 dist: $(DISTFILES)
-	version=`perl -ne 'print $$1 if /defconst records-version \"(.*)\"/' \
+	version=`perl -ne 'print $$1 if /defvar records-version \"([.1-9]*)\"/' \
 		 records.el`; \
 	distname=records-$$version; \
 	rm -rf $$distname; \
@@ -144,5 +144,5 @@ dist: $(DISTFILES)
 	for file in $(DISTFILES); do \
 	  ln $$file $$distname/$$file; \
 	done; \
-	$(TAR) -chz -f $$distname.tar.gz $$distname; \
+	$(TAR) -chz -f distributions/$$distname.tar.gz $$distname; \
 	rm -rf $$distname

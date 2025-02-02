@@ -2,7 +2,7 @@
 
 ### recordsadmin.in
 ###
-### $Id: recordsadmin.in,v 1.12 1999/11/23 19:51:18 ashvin Exp $
+### $Id: recordsadmin.in,v 1.14 2001/04/11 18:14:12 ashvin Exp $
 ###
 ### Copyright (C) 1996 by Ashvin Goel
 ###
@@ -14,9 +14,21 @@ use Getopt::Std;
 use File::Basename;
 
 # global - should be set by makefile
-$records_init_file="$ENV{HOME}/.emacs-records";
 
-$records_emacs_init_file="$ENV{HOME}/.emacs";
+$homedir="$ENV{HOME}";
+$records_srcdirpath="@srcdirpath@";
+
+# handle cygwin windows environment
+# probably flaky right now
+$cygpath="@CYGPATH@";
+if ((($ENV{OSTYPE} eq "cygwin") || ($ENV{OSTYPE} eq "CYGWIN")) &&
+    $cygpath ne "") {
+    $homedir = &cygwin_translate_path($homedir);
+    $records_srcdirpath=&cygwin_translate_path($records_srcdirpath);
+}
+
+$records_init_file="${homedir}/.emacs-records";
+$records_emacs_init_file="${homedir}/.emacs";
 
 # external global variables read from .emacs-records
 # with their documentation
@@ -54,7 +66,7 @@ Even if it is 2, records will work correctly after the turn of the century.
 Valid values are 2 or 4 only.',
 );
 
-$records_directory = "$ENV{HOME}/records";
+$records_directory = "${homedir}/records";
 $records_index_file = "${records_directory}/index";
 $records_dindex_file = "${records_directory}/dindex";
 $records_directory_structure = 1;
@@ -83,7 +95,7 @@ $records_more_init_mesg = <<MORE_MESG
 
 ;;; Add any emacs customization before this comment.
 
-(let ((f (expand-file-name "@srcdirpath@")))
+(let ((f (expand-file-name "$records_srcdirpath")))
   (if (not (member f load-path))
       (setq load-path (cons f load-path))))
 
@@ -443,12 +455,13 @@ sub records_normalize_date {
     }
     if (length($date[0]) == 2) {
 	# normalize year
-	substr($date[0], 2, 4) = substr($date[0], 0, 2);
+        local($year) = substr($date[0], 0, 2);
 	if ($date[0] > 90) {
 	    substr($date[0], 0, 2) = "19";
 	} else {
 	    substr($date[0], 0, 2) = "20";
 	}
+	substr($date[0], 2, 4) = $year;
     }
     # year month day
     return $date[0] . $date[1] . $date[2];
@@ -711,11 +724,12 @@ sub records_make_dindex {
     }
     open(DINDEX, ">$records_dindex_file") || 
 	die("Could not open $records_dindex_file for writing: $!\n");
-    print DINDEX " "; 
+    # print DINDEX " "; 
     foreach $ndate (sort keys (%records_date_index)) {
 	$date = &records_denormalize_date($ndate);
 	print DINDEX $date, "#", $records_date_index{$ndate}, " ";
     }
+    print DINDEX "\n"; # add a newline at the end of file to make emacs happy
     close (DINDEX);
 }
 
@@ -801,3 +815,26 @@ sub records_recreate_indexes {
     &records_make_dindex();
 }
 
+# This function might have to be changed for different emacs flavors
+# (native,cygwin) (emacs, xemacs).
+sub cygwin_translate_path {
+    local ($path) = @_;
+    local ($npath);
+
+    # convert path to windows path
+    $npath=`$cygpath -w $path`;
+    chop ($npath);
+    #print "path is $npath\n";
+
+    # Fix cygwin bug where even if $path has no trailing slash, $npath may 
+    # have it (when $path is a windows drive)
+    if (!($path =~ m#.*\\$#) && ($npath =~ m#.*\\$#)) {
+          chop ($npath);
+    }
+    $path = $npath;
+
+    # convert backslashes to slashes for emacs
+    $path =~ s#\\#/#g;
+    #print "translated path is $npath\n";
+    return $path;
+}

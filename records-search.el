@@ -1,7 +1,7 @@
 ;;
 ;;; records-extra.el
 ;;; 
-;;; $Id: records-search.el,v 1.1 1999/12/22 21:54:07 ashvin Exp $
+;;; $Id: records-search.el,v 1.2 2000/04/17 21:09:30 ashvin Exp $
 ;;;
 ;;; Copyright (C) 1999 by Kaarthik Sivakumar
 ;;;
@@ -30,12 +30,14 @@
 ;; 4. Reverse search should leave point at the beginning of the search string
 ;;    and forward search should leave point at the end of the search.
 
+;;;###autoload
 (defun records-search-forward (regexp)
   "Search forward for regular expression in current subject."
   (interactive "sEnter search string: ")
   (records-search-in-subject regexp)
 )
 
+;;;###autoload
 (defun records-search-backward (regexp)
   "Search backward for regular expression in current subject."
   (interactive "sEnter search string: ")

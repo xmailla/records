@@ -1,7 +1,7 @@
 ;;;
 ;;; records-dindex.el
 ;;;
-;;; $Id: records-dindex.el,v 1.3 1999/04/14 17:16:51 ashvin Exp $
+;;; $Id: records-dindex.el,v 1.4 2000/04/17 21:09:30 ashvin Exp $
 ;;;
 ;;; Copyright (C) 1996 by Ashvin Goel
 ;;;
@@ -26,9 +26,13 @@ If modified is t, check the file modification time since being visited."
 	    (revert-buffer)))
     ;; get the dindex file
     (setq records-dindex-buffer (buffer-name 
-			       (find-file-noselect records-dindex-file)))
+                                 (find-file-noselect records-dindex-file)))
     (save-excursion 
       (set-buffer records-dindex-buffer)
+      ;; add a newline at the end if needed
+      (goto-char (point-max))
+      (if (not (eq (char-before) ?\n))
+          (progn (insert "\n") (records-dindex-save-buffer)))
       (setq buffer-read-only t))))
 
 (defun records-dindex-save-buffer ()
@@ -42,7 +46,7 @@ if no-error is t, return nil if (date, tag) doesn't exist and
 place point on the smallest date greater than the argument date."
   (records-dindex-buffer modified)
   (set-buffer records-dindex-buffer)
-  (goto-char (point-max))  
+  (goto-char (1- (point-max)))
   ;; first check if date exists
   ;; start from end since we assume that
   ;; the last dates are most frequently used. 
@@ -62,15 +66,17 @@ place point on the smallest date greater than the argument date."
     ;; search linearly and place point on next date
     ;; search is done from end because we assume that
     ;; the last dates are most frequently used. 
-    (let ((ndate (records-normalize-date date)))
+    (let ((ndate (records-normalize-date date))
+          curr-date-count curr-ndate)
       (while ;; a do-while loop
-	  (let* ((curr-date-count (records-dindex-goto-prev-date))
-		 (curr-ndate
-		  (if curr-date-count
-		      (records-normalize-date (nth 0 curr-date-count)))))
-	    (and curr-date-count
-		 (records-ndate-lessp ndate curr-ndate))))
-      (records-dindex-goto-next-date)
+	  (progn (setq curr-date-count (records-dindex-goto-prev-date))
+		 (setq curr-ndate 
+                       (if curr-date-count
+                           (records-normalize-date (nth 0 curr-date-count))))
+                 (and curr-date-count
+                      (records-ndate-lessp ndate curr-ndate))))
+      (if curr-date-count ;; go to next date if the previous date was found
+          (records-dindex-goto-next-date))
       nil)))
 
 (defun records-dindex-goto-prev-date (&optional arg)

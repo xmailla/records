@@ -8,6 +8,9 @@ AC_ARG_ENABLE(xemacs,
 
 AC_PATH_PROGS(PERL, perl perl5)
 
+dnl for cygwin windows environment
+AC_PATH_PROGS(CYGPATH, cygpath)
+
 AC_PROG_INSTALL()
 
 lispdir='${datadir}/emacs/site-lisp'
